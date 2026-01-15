@@ -6,14 +6,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>محلل المهام التنظيمية</title>
   <style>
-    body { font-family: "Tahoma","Segoe UI",Arial,sans-serif; margin:24px; line-height:1.8; background:#fafafa; color:#222; }
-    h2 { margin-top:0; }
-    textarea { width:100%; max-width:900px; box-sizing:border-box; padding:12px; border:1px solid #ddd; border-radius:8px; background:#fff; font-size:15px; resize:vertical; }
-    .actions { margin:12px 0 20px; display:flex; gap:10px; flex-wrap:wrap; }
-    button { background:#0b5394; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
-    button.secondary { background:#777; }
-    .result { max-width:900px; background:#fff; border:1px solid #eee; border-radius:10px; padding:16px; min-height:60px; white-space:pre-wrap; word-break:break-word; }
-    .verb{color:#0b5394;font-weight:bold;} .domain{color:#38761d;font-weight:bold;} .tool{color:#7f6000;font-weight:bold;} .output{color:#990000;font-weight:bold;}
+    body {
+      font-family: "Tahoma","Segoe UI",Arial,sans-serif;
+      margin: 24px;
+      line-height: 1.8;
+      background: #fafafa;
+      color: #222;
+    }
+    h2 { margin-top: 0; }
+    textarea {
+      width: 100%;
+      max-width: 900px;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 15px;
+      resize: vertical;
+    }
+    .actions {
+      margin: 12px 0 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #0b5394;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button.secondary { background: #777; }
+    .result {
+      max-width: 900px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 16px;
+      min-height: 60px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .verb { color:#0b5394; font-weight:bold; }
+    .domain { color:#38761d; font-weight:bold; }
+    .tool { color:#7f6000; font-weight:bold; }
+    .output { color:#990000; font-weight:bold; }
   </style>
 </head>
 <body>
@@ -35,10 +76,10 @@
 
   <div class="result" id="output" aria-live="polite"></div>
 
-  <!-- سكربتاتك -->
+  <!-- سكربت التحليل -->
   script.js</script>
 
-  <!-- ربط الأزرار بالدوال الموجودة في script.js -->
+  <!-- ربط الأزرار بالدوال -->
   <script>
     const analyzeBtn = document.getElementById('analyzeBtn');
     const clearBtn   = document.getElementById('clearBtn');
@@ -46,25 +87,26 @@
     const inputEl    = document.getElementById('taskInput');
     const outputEl   = document.getElementById('output');
 
-    // اربطي الزر بالدالة الموجودة لديك: analyzeTask()
+    // زر التحليل
     analyzeBtn.addEventListener('click', () => {
       try {
         analyzeBtn.disabled = true;
         analyzeBtn.textContent = 'جاري التحليل...';
-        // تستدعي الدالة الموجودة التي أرسلتِها
-        window.analyzeTask();
+        window.analyzeTask(); // استدعاء الدالة الموجودة في script.js
       } finally {
         analyzeBtn.disabled = false;
         analyzeBtn.textContent = 'تحليل المهام';
       }
     });
 
+    // زر المسح
     clearBtn.addEventListener('click', () => {
       inputEl.value = '';
       outputEl.innerHTML = '';
       inputEl.focus();
     });
 
+    // زر النسخ
     copyBtn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(outputEl.innerText || '');
@@ -76,23 +118,19 @@
       }
     });
 
-    // تحسين اختياري: اجعلي applySuggestion تُحدث النص فعليًا
-    // سيبحث عن المهمة رقم N في الإدخال ويستبدلها بالصياغة المقترحة
+    // تحسين اعتماد الصياغة
     window.applySuggestion = (taskIndex, suggestionIndex) => {
-      // التقط الصياغة من صندوق الاقتراح المضغوط بجانب الزر
       const allSuggestionBlocks = document.querySelectorAll('[data-suggestion-block]');
-      const block = allSuggestionBlocks[taskIndex * 3 + suggestionIndex]; // 3 اقتراحات/مهمة حسب كودك
+      const block = allSuggestionBlocks[taskIndex * 3 + suggestionIndex];
       if (!block) return alert('تعذر العثور على الصياغة.');
 
       const suggestedText = block.querySelector('[data-s-text]')?.innerText?.trim();
       if (!suggestedText) return alert('تعذر قراءة الصياغة.');
 
       const lines = inputEl.value.split(/\r?\n/);
-      // استبدال سطر المهمة (بنفس الفهرس)
-      lines[taskIndex] = suggestedText.replace(/\s*\.\s*$/, ''); // بدون النقطة النهائية
+      lines[taskIndex] = suggestedText.replace(/\s*\.\s*$/, '');
       inputEl.value = lines.join('\n');
 
-      // أعيدي التحليل مباشرة
       window.analyzeTask();
     };
   </script>
