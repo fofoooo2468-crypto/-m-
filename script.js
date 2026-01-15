@@ -4,6 +4,30 @@ const TOOL_KW = ["معايير","سياسات","لوائح","أطر"];
 const OUT_KW = ["تقرير","نتائج","مستوى","توصيات"];
 
 function norm(s){return (s||"").replace(/[إأآا]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").trim();}
+function uniq(arr){return [...new Set(arr.filter(Boolean))];}
+
+function findAllVerbs(text){
+  const n = norm(text);
+  return uniq(VERBS.filter(v => n.includes(norm(v))));
+}
+
+function splitDomains(text, verbsFound){
+  let n = text;
+  verbsFound.forEach(v => n = n.replace(new RegExp(v,"g"), ""));
+  const parts = n.split(/[,،]|(?:\sو\s)/g).map(s=>s.trim()).filter(s=>s.split(/\s+/).length>=2);
+  return uniq(parts);
+}
+
+function detectTool(text){ return TOOL_KW.find(k => text.includes(k)) || ""; }
+function detectOutput(text){ return OUT_KW.find(k => text.includes(k)) || ""; }
+
+function unifySentence(verb, domain, toolPhrase, outPhrase){
+  const v = verb || "مراقبة";
+  const d = domain || "المجال";
+  const tool = toolPhrase ? `من خلال ${toolPhrase}` : "من خلال معايير تنظيمية معتمدة";
+  const out  = outPhrase ? `بما ينتج عنه ${outPhrase}` : "بما ينتج عنه إعداد تقرير إشرافي";
+  return `${v} ${d} ${tool} ${out}`;
+}
 
 function analyzeTask(){
   const input = document.getElementById("taskInput").value.trim();
@@ -11,30 +35,37 @@ function analyzeTask(){
   if(!input){ out.innerHTML = "<div>يرجى إدخال مهمة</div>"; return; }
 
   const tasks = input.split(/\r?\n/).filter(Boolean);
-  out.innerHTML = tasks.map((t,i)=>analyzeSingleTask(t,i)).join("");
+  out.innerHTML = tasks.map((t,i)=>renderTaskCard(t,i)).join("");
 }
 
-function analyzeSingleTask(text,index){
-  const verbsFound = VERBS.filter(v => norm(text).includes(norm(v)));
-  const domain = extractDomain(text);
-  const tool = TOOL_KW.find(k => text.includes(k)) || "-";
-  const output = OUT_KW.find(k => text.includes(k)) || "-";
+function renderTaskCard(text,index){
+  const verbsFound = findAllVerbs(text);
+  const domains = splitDomains(text, verbsFound);
+  const toolPhrase = detectTool(text);
+  const outPhrase  = detectOutput(text);
 
   const table = `
     <table border="1" style="width:100%;margin-top:8px;text-align:center">
-      <tr><th>الأفعال</th><th>المجال</th><th>الأداة</th><th>المخرج</th></tr>
-      <tr><td>${verbsFound.join("، ")||"-"}</td><td>${domain||"-"}</td><td>${tool}</td><td>${output}</td></tr>
+      <tr><th>الأفعال</th><th>المجالات</th><th>الأداة</th><th>المخرج</th></tr>
+      <tr><td>${verbsFound.join("، ")||"-"}</td><td>${domains.join(" | ")||"-"}</td><td>${toolPhrase||"-"}</td><td>${outPhrase||"-"}</td></tr>
     </table>
   `;
 
-  const suggestions = buildSuggestions(verbsFound, domain);
+  const suggestions = [];
+  const vList = verbsFound.length ? verbsFound : ["مراقبة"];
+  const dList = domains.length ? domains : ["المجال"];
+  vList.forEach(v=>{
+    dList.forEach(d=>{
+      suggestions.push(unifySentence(v,d,toolPhrase,outPhrase));
+    });
+  });
 
   return `
     <div class="task-card">
       <h2>المهمة ${index+1}</h2>
       ${table}
-      <h3>مقترحات صياغة:</h3>
-      ${suggestions.map((s,i)=>`
+      <h3>مقترحات صياغة منضبطة:</h3>
+      ${suggestions.map(s=>`
         <div class="suggest">
           ${s}
           <button class="btn btn-secondary" onclick="approveSuggestion('${s}')">اعتماد</button>
@@ -42,16 +73,6 @@ function analyzeSingleTask(text,index){
       `).join("")}
     </div>
   `;
-}
-
-function extractDomain(text){
-  const words = text.split(" ");
-  return words.slice(1,5).join(" ");
-}
-
-function buildSuggestions(verbs, domain){
-  if(verbs.length === 0) verbs = ["مراقبة"];
-  return verbs.map(v => `${v} ${domain} من خلال معايير تنظيمية معتمدة بما ينتج عنه إعداد تقرير إشرافي`);
 }
 
 function approveSuggestion(s){
