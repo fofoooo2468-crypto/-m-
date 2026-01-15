@@ -36,42 +36,123 @@
 
   <div class="result" id="output" aria-live="polite"></div>
 
-  <!-- سكربت التحليل -->
-  script.js</script>
-
-  <!-- ربط الأزرار بالدوال -->
+  <!-- كل المنطق مضمّن هنا -->
   <script>
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const clearBtn   = document.getElementById('clearBtn');
-    const copyBtn    = document.getElementById('copyBtn');
-    const inputEl    = document.getElementById('taskInput');
-    const outputEl   = document.getElementById('output');
+    /* ========= أدوات مساعدة ========= */
+    function norm(s){return (s||"").replace(/[إأآا]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[^\u0600-\u06FF0-9A-Za-z\s]/g,"").trim();}
+    function escapeHTML(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
 
-    analyzeBtn.addEventListener('click', () => {
-      analyzeBtn.disabled = true;
-      analyzeBtn.textContent = 'جاري التحليل...';
-      try { window.analyzeTask(); }
-      finally {
-        analyzeBtn.disabled = false;
-        analyzeBtn.textContent = 'تحليل المهام';
-      }
-    });
+    const toolConnectors=["من خلال","وفق","بموجب","استنادًا إلى","استنادا إلى","بالاعتماد على","استنادا الى","استنادًا الى"];
+    const outputConnectors=["بما ينتج عنه","بما يحقق","بهدف","لتحقيق","ليتم","لـ","لقياس"];
+    const verbsList=["مراقبة","متابعة","تفتيش","تقييم","إشراف","حوكمة","إدارة","تنظيم","اعتماد","تصنيف","ترخيص"];
+    const toolsKeywords=["معايير","سياسات","لوائح","ضوابط","أطر","أدلة","إجراءات","مرجعيات","معايير الامتثال","مؤشرات الأداء","أطر الحوكمة","التشريعات"];
+    const outputsKeywords=["تقرير","تقارير","قرار","مستوى","نتائج","توصيات","تصنيف","اعتماد","إطار","مؤشرات","قياس","رفع"];
 
-    clearBtn.addEventListener('click', () => {
-      inputEl.value = '';
-      outputEl.innerHTML = '';
-      inputEl.focus();
-    });
+    function charIndexFromNorm(original,normIndex){let o=0,count=0;while(o<original.length&&count<normIndex){const ch=original[o];const mapped=norm(ch);count+=mapped.length?1:0;o++;}return o;}
 
-    copyBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(outputEl.innerText || '');
-        copyBtn.textContent = 'تم النسخ ✓';
-      } catch {
-        copyBtn.textContent = 'تعذّر النسخ';
-      } finally {
-        setTimeout(()=> copyBtn.textContent='نسخ المخرجات', 1000);
-      }
+    function extractPieces(raw){
+      const txt=raw.trim(); const n=norm(txt);
+      let verb="", vIndex=-1;
+      for(const v of verbsList){const nv=norm(v);const idx=n.indexOf(nv); if(idx>-1&&(vIndex===-1||idx<vIndex)){vIndex=idx; verb=v;}}
+      let tConn=null,tIdx=-1; for(const c of toolConnectors){const idx=n.indexOf(norm(c)); if(idx>-1&&(tIdx===-1||idx<tIdx)){tIdx=idx; tConn=c;}}
+      let oConn=null,oIdx=-1; for(const c of outputConnectors){const idx=n.indexOf(norm(c)); if(idx>-1&&(oIdx===-1||idx<oIdx)){oIdx=idx; oConn=c;}}
+      const startAfterVerb= vIndex>-1 ? vIndex+norm(verb).length : 0;
+      const firstBreak=[tIdx,oIdx].filter(x=>x>-1).sort((a,b)=>a-b)[0] ?? n.length;
+      let domain=txt.substring(charIndexFromNorm(txt,startAfterVerb),charIndexFromNorm(txt,firstBreak)).replace(/^[\s:،.-]+|[\s:،.-]+$/g,"");
+      if(domain.split(/\s+/).filter(Boolean).length<2){const words=txt.split(/\s+/).filter(Boolean); domain=words.slice(-4).join(" ");}
+      let toolPhrase=""; if(tIdx>-1){const end=(oIdx>-1&&oIdx>tIdx)?oIdx:n.length; toolPhrase=txt.substring(charIndexFromNorm(txt,tIdx),charIndexFromNorm(txt,end)).trim();}
+      let outputPhrase=""; if(oIdx>-1){outputPhrase=txt.substring(charIndexFromNorm(txt,oIdx)).trim();}
+      else{const hasOut=outputsKeywords.some(k=>n.includes(norm(k))); if(hasOut){outputPhrase="بإصدار تقرير أو قياس مستوى الأداء وفق مؤشرات معتمدة";}}
+      return {verb,domain,toolPhrase,outputPhrase,tConn,oConn};
+    }
+
+    function hasToolPhrase(text){const n=norm(text||""); return toolConnectors.some(c=>n.includes(norm(c)))||toolsKeywords.some(k=>n.includes(norm(k)));}
+    function hasOutputPhrase(text){const n=norm(text||""); return outputConnectors.some(c=>n.includes(norm(c)))||outputsKeywords.some(k=>n.includes(norm(k)));}
+
+    function buildSuggestions({verb,domain}){
+      const v=verb||"مراقبة"; const d=escapeHTML(domain||"المجال");
+      const s1=`${v} <span class="domain">${d}</span> من خلال <span class="tool">معايير الامتثال المعتمدة</span> لقياس <span class="output">مستوى الالتزام بها</span> وفق <span class="tool">مؤشرات معتمدة</span>.`;
+      const s2=`${v==="مراقبة"?"إشراف":"مراقبة"} <span class="domain">${d}</span> وفق <span class="tool">أطر الحوكمة والسياسات المعتمدة</span> بما يحقق <span class="output">ضبط الممارسات وإصدار تقارير دورية</span>.`;
+      const s3=`تنظيم <span class="domain">${d}</span> بموجب <span class="tool">لوائح وتعليمات معتمدة</span> بما ينتج عنه <span class="output">إطار تنظيمي واضح وقرارات تنفيذية</span>.`;
+      return [s1,s2,s3];
+    }
+
+    function analyzeTask(){
+      const input=document.getElementById("taskInput").value.trim();
+      const output=document.getElementById("output");
+      if(!input){output.innerHTML='<span class="badge-bad">يرجى إدخال مهمة واحدة على الأقل</span>'; return;}
+      const tasks=input.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
+      output.innerHTML="";
+      tasks.forEach((task,index)=>{output.innerHTML+=analyzeSingleTask(task,index);});
+    }
+
+    function analyzeSingleTask(text,index){
+      const {verb,domain,toolPhrase,outputPhrase}=extractPieces(text);
+      const okVerb=!!verb;
+      const okDom=(domain||"").split(/\s+/).filter(Boolean).length>=2;
+      const okTool=hasToolPhrase(toolPhrase||text);
+      const okOutput=hasOutputPhrase(outputPhrase||text);
+      const missing=[];
+      if(!okVerb)missing.push("فعل تنظيمي");
+      if(!okDom)missing.push("مجال واضح");
+      if(!okTool)missing.push("أداة تنظيمية");
+      if(!okOutput)missing.push("مخرج للمهمة");
+      const isValid=missing.length===0;
+      const suggestions=buildSuggestions({verb,domain});
+      return `
+        <div style="border:1px solid #ccc; padding:15px; margin-top:15px">
+          <strong>المهمة ${index+1}</strong><br><br>
+          ${isValid?`<span class="badge-ok">✔ الصياغة صحيحة ومنضبطة (${escapeHTML(verb)} + مجال + أداة + مخرج)</span>`:`<span class="badge-bad">✖ الصياغة غير مكتملة</span>`}
+          <br><br>
+          ${!isValid?`
+            <b>العناصر الناقصة:</b>
+            <ul>${missing.map(m=>`<li>${m}</li>`).join("")}</ul>
+            <b>مقترحات صياغة منضبطة:</b><br><br>
+            ${suggestions.map((s,i)=>`
+              <div style="background:#f5f5f5;padding:10px;margin-bottom:8px" data-suggestion-block>
+                <div data-s-text>${s}</div>
+                <br>
+                <button onclick="applySuggestion(${index}, ${i})">اعتماد هذه الصياغة</button>
+              </div>
+            `).join("")}
+          `:`
+            <div style="background:#eef;padding:10px">
+              <span class="verb">${escapeHTML(verb||"—")}</span> /
+              <span class="domain">${okDom?"المجال واضح":"—"}</span> /
+              <span class="tool">${okTool?"أداة تنظيمية":"—"}</span> /
+              <span class="output">${okOutput?"مخرج محدد":"—"}</span>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function applySuggestion(taskIndex,suggestionIndex){
+      const inputEl=document.getElementById('taskInput');
+      const blocks=document.querySelectorAll('[data-suggestion-block]');
+      const block=blocks[taskIndex*3+suggestionIndex];
+      if(!block){alert('تعذر العثور على الصياغة.'); return;}
+      const html=block.querySelector('[data-s-text]')?.innerHTML||'';
+      const plain=html.replace(/<[^>]+>/g,'').replace(/\s*\.\s*$/,'');
+      const lines=inputEl.value.split(/\r?\n/);
+      lines[taskIndex]=plain;
+      inputEl.value=lines.join('\n');
+      analyzeTask();
+    }
+
+    // ربط الأزرار (نضمن التنفيذ بعد تحميل DOM)
+    document.addEventListener('DOMContentLoaded', function(){
+      document.getElementById('analyzeBtn').addEventListener('click', analyzeTask);
+      document.getElementById('clearBtn').addEventListener('click', ()=>{
+        document.getElementById('taskInput').value='';
+        document.getElementById('output').innerHTML='';
+      });
+      document.getElementById('copyBtn').addEventListener('click', async ()=>{
+        const txt=document.getElementById('output').innerText||'';
+        try{ await navigator.clipboard.writeText(txt); this.innerText='تم النسخ ✓'; }
+        catch{ this.innerText='تعذّر النسخ'; }
+        finally{ const self=this; setTimeout(()=> self.innerText='نسخ المخرجات',1000); }
+      });
     });
   </script>
 </body>
