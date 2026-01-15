@@ -1,58 +1,56 @@
-function analyzeTask() {
-  const input = document.getElementById("taskInput").value.trim();
-  const output = document.getElementById("output");
-
-  if (!input) {
-    alert("يرجى إدخال مهمة واحدة على الأقل");
-    return;
-  }
-
-  const tasks = input.split("\n").filter(t => t.trim() !== "");
-  output.innerHTML = "";
-
-  tasks.forEach((task, index) => {
-    output.innerHTML += analyzeSingleTask(task, index);
-  });
-}
 
 function analyzeSingleTask(text, index) {
+  // (اختياري) تطبيع بسيط لتقليل تأثير اختلاف الهمزات والألف المقصورة/التاء المربوطة
+  const norm = (s) => s
+    .replace(/[إأآا]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .trim();
+
+  const rawText = text;
+  const normalizedText = norm(text);
 
   // أفعال تنظيمية مع تصنيفها
   const verbs = {
-    رقابي: ["مراقبة","رقابة","تفتيش","متابعة"],
-    إشرافي: ["إشراف","حوكمة","إدارة"],
+    رقابي: ["مراقبه","رقابه","تفتيش","متابعه"],
+    إشرافي: ["اشراف","حوكمه","اداره"],
     تنظيمي: ["تنظيم","اعتماد","تصنيف","ترخيص"],
     تطويري: ["تطوير","تحسين","تقييم"]
   };
 
-  const tools = ["من خلال","وفق","بموجب","استنادًا إلى","معايير","سياسات","أطر","لوائح"];
-  const outputs = ["تقرير","قرار","مستوى","نتائج","توصيات","تصنيف","اعتماد","إطار"];
+  const tools = ["من خلال","وفق","بموجب","استنادا الى","معايير","سياسات","اطر","لوائح"]
+    .map(norm);
+  const outputs = ["تقرير","قرار","مستوى","نتائج","توصيات","تصنيف","اعتماد","اطار"]
+    .map(norm);
 
   let detectedVerb = "";
   let verbType = "";
 
+  // ابحث عن أول فعل مطابق وتوقف
+  outer:
   for (const type in verbs) {
-    verbs[type].forEach(v => {
-      if (text.includes(v)) {
-        detectedVerb = v;
+    for (const v of verbs[type]) {
+      if (normalizedText.includes(norm(v))) {
+        detectedVerb = v.replace(/ه$/, 'ة'); // إرجاع التاء المربوطة للعرض فقط
         verbType = type;
+        break outer;
       }
-    });
+    }
   }
 
-  const hasVerb = detectedVerb !== "";
-  const hasTool = tools.some(t => text.includes(t));
-  const hasOutput = outputs.some(o => text.includes(o));
-  const hasDomain = text.split(" ").length >= 3;
+  const hasVerb   = detectedVerb !== "";
+  const hasTool   = tools.some(t => normalizedText.includes(t));
+  const hasOutput = outputs.some(o => normalizedText.includes(o));
+  const hasDomain = rawText.split(/\s+/).length >= 3;
 
-  let missing = [];
-  if (!hasVerb) missing.push("فعل تنظيمي");
+  const missing = [];
+  if (!hasVerb)   missing.push("فعل تنظيمي");
   if (!hasDomain) missing.push("مجال واضح");
-  if (!hasTool) missing.push("أداة تنظيمية");
+  if (!hasTool)   missing.push("أداة تنظيمية");
   if (!hasOutput) missing.push("مخرج للمهمة");
 
-  // استخراج المجال (آخر كلمتين تقريبًا)
-  const words = text.split(" ");
+  // استخراج المجال (آخر كلمتين كحل بسيط)
+  const words = rawText.trim().split(/\s+/);
   const domain = words.slice(-2).join(" ");
 
   // اقتراحات متعددة حسب نوع الفعل
@@ -84,9 +82,9 @@ function analyzeSingleTask(text, index) {
       <b>مقترحات صياغة منضبطة:</b><br><br>
 
       ${suggestions.map((s, i) => `
-        <div style="background:#f5f5f5;padding:10px;margin-bottom:8px">
-          ${s}
-          <br><br>
+        <div style="background:#f5f5f5;padding:10px;margin-bottom:8px" data-suggestion-block>
+          <div data-s-text>${s}</div>
+          <br>
           <button onclick="applySuggestion(${index}, ${i})">
             اعتماد هذه الصياغة
           </button>
@@ -102,8 +100,4 @@ function analyzeSingleTask(text, index) {
     `}
   </div>
   `;
-}
-
-function applySuggestion(taskIndex, suggestionIndex) {
-  alert("تم اعتماد الصياغة المقترحة للمهمة رقم " + (taskIndex + 1));
 }
