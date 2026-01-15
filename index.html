@@ -5,10 +5,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>محلل المهام التنظيمية</title>
-  style.css
-</head>
-<body>
-  <div class="container">
+
+  <!-- ربط ملف التنسيق -->
+  <link rel="stylesheet" href<div class="container">
     <div class="brand-band">
       <h1>محلل صياغة المهام التنظيمية</h1>
       <h3>يقيّم المهمة وفق أربعة عناصر: <span class="verb">فعل تنظيمي</span> + <span class="domain">مجال واضح</span> + <span class="tool">أداة تنظيمية</span> + <span class="output">مخرج</span>.</h3>
@@ -17,13 +16,12 @@
     <div class="panel">
       <label for="taskInput">أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):</label>
       <textarea id="taskInput" placeholder="مثال:
-متابعة أداء شركات العمرة
-إشراف أعمال مزودي خدمات الحجاج"></textarea>
+متابعة ومراقبة خدمات شركات تقديم الخدمة وتطوير نشاطهم بالمدينة المنورة، والإسهام في حل المشكلات والصعوبات التي تواجههم"></textarea>
 
       <div class="actions">
-        <button type="button" class="btn btn-primary" onclick="analyzeTask()">تحليل المهام</button>
-        <button type="button" class="btn btn-secondary" onclick="clearAll()">مسح الإدخال</button>
-        <button type="button" class="btn btn-ghost" onclick="copyOut()">نسخ المخرجات</button>
+        <button type="button" class="btn btn-primary" id="analyzeBtn">تحليل المهام</button>
+        <button type="button" class="btn btn-secondary" id="clearBtn">مسح الإدخال</button>
+        <button type="button" class="btn btn-ghost" id="copyBtn">نسخ المخرجات</button>
       </div>
 
       <div class="result" id="output"></div>
@@ -36,6 +34,7 @@
     </div>
   </div>
 
+  <!-- ربط ملف الجافاسكربت -->
   script.js</script>
 </body>
 </html>
