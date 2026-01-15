@@ -1,7 +1,5 @@
 
 const VERBS = ["مراقبة","متابعة","تفتيش","تقييم","إشراف","حوكمة","إدارة","تنظيم","اعتماد","تصنيف","ترخيص","تطوير","حل"];
-const TOOL_CONNECTORS = ["من خلال","وفق","بموجب"];
-const OUT_CONNECTORS = ["بما ينتج عنه","بما يحقق","لقياس"];
 const TOOL_KW = ["معايير","سياسات","لوائح","أطر"];
 const OUT_KW = ["تقرير","نتائج","مستوى","توصيات"];
 
@@ -64,13 +62,13 @@ function approveSuggestion(s){
   list.appendChild(card);
 }
 
-function clearAll(){
+document.getElementById("analyzeBtn").onclick = analyzeTask;
+document.getElementById("clearBtn").onclick = () => {
   document.getElementById("taskInput").value="";
   document.getElementById("output").innerHTML="";
-}
-
-async function copyOut(){
+};
+document.getElementById("copyBtn").onclick = async () => {
   const txt = document.getElementById("output").innerText;
   await navigator.clipboard.writeText(txt);
   alert("تم النسخ");
-}
+};
