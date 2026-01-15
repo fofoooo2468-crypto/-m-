@@ -5,96 +5,297 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>محلل المهام التنظيمية</title>
+
+  <!-- تعريف الخطوط: ارفعي ملفات woff2 إلى مجلد /fonts -->
   <style>
-    body { font-family: "Tahoma","Segoe UI",Arial,sans-serif; margin:24px; line-height:1.8; background:#fafafa; color:#222; }
-    h2 { margin-top:0; }
-    textarea { width:100%; max-width:900px; box-sizing:border-box; padding:12px; border:1px solid #ddd; border-radius:8px; background:#fff; font-size:15px; resize:vertical; }
-    .actions { margin:12px 0 20px; display:flex; gap:10px; flex-wrap:wrap; }
-    button { background:#0b5394; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
-    button.secondary { background:#777; }
-    .result { max-width:900px; background:#fff; border:1px solid #eee; border-radius:10px; padding:16px; min-height:60px; white-space:pre-wrap; word-break:break-word; }
-    .verb{color:#0b5394;font-weight:bold;} .domain{color:#38761d;font-weight:bold;} .tool{color:#7f6000;font-weight:bold;} .output{color:#990000;font-weight:bold;}
-    .ok{color:green} .bad{color:#c00}
+    @font-face {
+      font-family: "Abar";
+      src: url("fonts/Abar-Regular.woff2") format("woff2");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Abar";
+      src: url("fonts/Abar-SemiBold.woff2") format("woff2");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Abar";
+      src: url("fonts/Abar-Bold.woff2") format("woff2");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* ============ تصميم النظام (ألوان/أحجام/مسافات) ============ */
+    :root{
+      /* ألوان رئيسية */
+      --c-sand:   #f5ede3; /* رئيسي فاتح */
+      --c-amber:  #d7a562; /* رئيسي ذهبي */
+      --c-ink:    #00080b; /* نص داكن */
+
+      /* ألوان ثانوية */
+      --c-brown:     #87452b;
+      --c-deepbrown: #2b140a;
+      --c-sky:       #70a3c2;
+      --c-navy:      #174766;
+      --c-teal:      #038061;
+      --c-deepteal:  #004545;
+
+      /* تدرجات (تُحسب آليًا، مع قيم احتياطية قبلها) */
+      --sand-70-fb:  #f2e7d8; /* fallback تقديرية */
+      --sand-50-fb:  #f7efe6;
+      --sand-30-fb:  #fbf6f0;
+
+      --amber-70-fb: #cfa55f;
+      --amber-50-fb: #e2c691;
+      --amber-30-fb: #eeddb9;
+
+      --ink-70-fb:   #334147;
+      --ink-50-fb:   #66787f;
+      --ink-30-fb:   #99a8ad;
+
+      /* color-mix (مدعوم في المتصفحات الحديثة) */
+      --sand-70:  color-mix(in srgb, var(--c-sand) 70%, white);
+      --sand-50:  color-mix(in srgb, var(--c-sand) 50%, white);
+      --sand-30:  color-mix(in srgb, var(--c-sand) 30%, white);
+
+      --amber-70: color-mix(in srgb, var(--c-amber) 70%, white);
+      --amber-50: color-mix(in srgb, var(--c-amber) 50%, white);
+      --amber-30: color-mix(in srgb, var(--c-amber) 30%, white);
+
+      --ink-70:   color-mix(in srgb, var(--c-ink) 70%, white);
+      --ink-50:   color-mix(in srgb, var(--c-ink) 50%, white);
+      --ink-30:   color-mix(in srgb, var(--c-ink) 30%, white);
+
+      /* أحجام خط هادئة */
+      --fs-1: 22px;   /* H1 (أصغر من قبل) */
+      --fs-2: 18px;   /* H2 */
+      --fs-3: 16px;   /* عنوان فرعي */
+      --fs-b: 14.5px; /* نص أساسي */
+
+      /* مسافات مضبوطة */
+      --sp-1: 6px;
+      --sp-2: 10px;
+      --sp-3: 14px;
+      --sp-4: 18px;
+      --radius: 10px;
+      --border: 1px solid var(--sand-70, var(--sand-70-fb));
+      --shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    /* ============ الأساسيات ============ */
+    html, body { height: 100%; }
+    body{
+      font-family: "Abar", "Tahoma","Segoe UI", Arial, sans-serif;
+      font-weight: 600;              /* نص: Abar SemiBold */
+      font-size: var(--fs-b);
+      line-height: 1.55;             /* تقليل المسافات بين الأسطر */
+      background: var(--sand-30, var(--sand-30-fb));
+      color: var(--c-ink);
+      margin: 0;
+      padding: 24px;
+    }
+
+    h1, h2, h3 { margin: 0 0 var(--sp-2); color: var(--c-ink); }
+    h1{ font-weight: 400; font-size: var(--fs-1); } /* Abar Regular */
+    h2{ font-weight: 700; font-size: var(--fs-2); } /* Abar Bold */
+    h3{ font-weight: 600; font-size: var(--fs-3); } /* Abar SemiBold */
+
+    /* تخطيط بسيط */
+    .container{
+      max-width: 980px; margin: 0 auto;
+    }
+
+    .panel{
+      background: #fff;
+      border: var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    label{ display:block; margin-bottom: var(--sp-1); color: var(--ink-70, var(--ink-70-fb)); }
+
+    textarea{
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid var(--sand-70, var(--sand-70-fb));
+      border-radius: 8px;
+      background: #fff;
+      font: inherit;                 /* يورّث Abar SemiBold */
+      line-height: 1.5;              /* أهدأ */
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .actions{
+      margin: var(--sp-2) 0 var(--sp-3);
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+
+    /* أزرار بهوية رسمية هادئة */
+    .btn{
+      border: none;
+      padding: 9px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      transition: .15s ease-in-out;
+    }
+    .btn-primary{
+      background: var(--amber-70, var(--amber-70-fb));
+      color: var(--c-ink);
+    }
+    .btn-primary:hover{ background: var(--c-amber); }
+
+    .btn-secondary{
+      background: var(--c-navy);
+      color: #fff;
+    }
+    .btn-secondary:hover{ background: color-mix(in srgb, var(--c-navy) 85%, white); }
+
+    .btn-ghost{
+      background: transparent;
+      color: var(--c-navy);
+      border: 1px solid color-mix(in srgb, var(--c-navy) 40%, white);
+    }
+    .btn-ghost:hover{
+      background: color-mix(in srgb, var(--c-navy) 10%, white);
+    }
+
+    /* نتائج التحليل */
+    .result{
+      background: var(--sand-50, var(--sand-50-fb));
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-height: 60px;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .task-card{
+      background: #fff;
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-top: 12px;
+      box-shadow: var(--shadow);
+    }
+    .status-ok   { color: var(--c-teal); }
+    .status-bad  { color: var(--c-brown); }
+
+    .chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top: var(--sp-2); }
+    .chip{
+      background: var(--sand-30, var(--sand-30-fb));
+      border: 1px solid var(--sand-70, var(--sand-70-fb));
+      color: var(--c-ink);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12.5px;
+    }
+
+    /* ألوان مميزة بحسب العنصر */
+    .verb   { color: var(--c-navy); font-weight: 700; }
+    .domain { color: var(--c-teal); font-weight: 600; }
+    .tool   { color: var(--c-brown); font-weight: 600; }
+    .output { color: var(--c-amber); font-weight: 700; }
+
+    /* بطاقات الاقتراحات */
+    .suggest{
+      background: var(--sand-30, var(--sand-30-fb));
+      border: 1px dashed var(--sand-70, var(--sand-70-fb));
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .suggest .btn{
+      padding: 6px 10px; font-size: 13px;
+    }
+
+    /* قوائم أنظف */
+    ul{ margin: 6px 0 10px 0; padding-right: 18px; }
+    li{ margin: 2px 0; }
+
+    /* شريط علوي بسيط مستلهم من الأشكال المرفقة (هادئ) */
+    .brand-band{
+      background:
+        linear-gradient(135deg,
+          color-mix(in srgb, var(--c-sand) 70%, white) 0%,
+          color-mix(in srgb, var(--c-sky) 25%, white) 40%,
+          color-mix(in srgb, var(--c-amber) 20%, white) 100%);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <div class="brand-band">
+      <h1>محلل صياغة المهام التنظيمية</h1>
+      <h3 style="margin-top:4px;color:var(--ink-70, var(--ink-70-fb)); font-weight:600">
+        يقيّم المهمة وفق أربعة عناصر: <span class="verb">فعل تنظيمي</span> + <span class="domain">مجال واضح</span> + <span class="tool">أداة تنظيمية</span> + <span class="output">مخرج</span>.
+      </h3>
+    </div>
 
-  <h2>محلل صياغة المهام التنظيمية</h2>
-
-  <label for="taskInput" style="display:block;margin-bottom:6px;">
-    أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):
-  </label>
-  <textarea id="taskInput" rows="6" placeholder="مثال:
+    <div class="panel">
+      <label for="taskInput">أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):</label>
+      <textarea id="taskInput" placeholder="مثال:
 متابعة أداء شركات العمرة
 إشراف أعمال مزودي خدمات الحجاج"></textarea>
 
-  <div class="actions">
-    <!-- استدعاء مباشر بدون أي تعقيدات ربط -->
-    <button type="button" onclick="analyzeTask()">تحليل المهام</button>
-    <button class="secondary" type="button" onclick="clearAll()">مسح الإدخال</button>
-    <button class="secondary" type="button" onclick="copyOut()">نسخ المخرجات</button>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" onclick="analyzeTask()">تحليل المهام</button>
+        <button type="button" class="btn btn-secondary" onclick="clearAll()">مسح الإدخال</button>
+        <button type="button" class="btn btn-ghost" onclick="copyOut()">نسخ المخرجات</button>
+      </div>
+
+      <div class="result" id="output" aria-live="polite"></div>
+    </div>
   </div>
 
-  <div class="result" id="output" aria-live="polite"></div>
-
-  <!-- كل المنطق مضمَّن هنا -->
+  <!-- منطق التحليل (كما تم اعتماده سابقاً) -->
   <script>
     /* ========= أدوات مساعدة ========= */
     function norm(s){return (s||"").replace(/[إأآا]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[^\u0600-\u06FF0-9A-Za-z\s]/g,"").trim();}
     function escapeHTML(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
 
-    // موصلات وألفاظ شائعة للأداة والمخرج
     const TOOL_CONNECTORS = ["من خلال","وفق","بموجب","استنادًا إلى","استنادا إلى","بالاعتماد على","استنادا الى","استنادًا الى"];
     const OUT_CONNECTORS  = ["بما ينتج عنه","بما يحقق","بهدف","لتحقيق","ليتم","لـ","لقياس","ما ينتج عنه"];
 
-    // قوائم العناصر
     const VERBS   = ["مراقبة","متابعة","تفتيش","تقييم","إشراف","حوكمة","إدارة","تنظيم","اعتماد","تصنيف","ترخيص"];
     const TOOL_KW = ["معايير","سياسات","لوائح","ضوابط","أطر","أدلة","إجراءات","مرجعيات","معايير الامتثال","مؤشرات الأداء","أطر الحوكمة","التشريعات"];
     const OUT_KW  = ["تقرير","تقارير","قرار","مستوى","نتائج","توصيات","تصنيف","اعتماد","إطار","مؤشرات","قياس","رفع"];
 
-    // فهرسة تقريبية من نص مطبَّع إلى نص أصلي
     function charIndexFromNorm(original,normIndex){
-      let o=0,count=0;
-      while(o<original.length && count<normIndex){
-        const mapped=norm(original[o]);
-        count += mapped.length ? 1 : 0; o++;
-      }
-      return o;
+      let o=0,count=0; while(o<original.length && count<normIndex){ const mapped=norm(original[o]); count+=mapped.length?1:0; o++; } return o;
     }
 
     function extractPieces(raw){
       const txt=raw.trim(); const n=norm(txt);
-      // 1) الفعل
       let verb="", vIdx=-1;
-      for(const v of VERBS){const nv=norm(v); const i=n.indexOf(nv); if(i>-1 && (vIdx===-1 || i<vIdx)){vIdx=i; verb=v;}}
-      // 2) موصلات الأداة/المخرج
-      let tIdx=-1, tConn=null; for(const c of TOOL_CONNECTORS){const i=n.indexOf(norm(c)); if(i>-1 && (tIdx===-1||i<tIdx)){tIdx=i; tConn=c;}}
-      let oIdx=-1, oConn=null; for(const c of OUT_CONNECTORS){const i=n.indexOf(norm(c)); if(i>-1 && (oIdx===-1||i<oIdx)){oIdx=i; oConn=c;}}
-      // 3) المجال: بعد الفعل حتى أول موصل
-      const startAfterVerb = vIdx>-1 ? vIdx + norm(verb).length : 0;
-      const firstBreak = [tIdx,oIdx].filter(x=>x>-1).sort((a,b)=>a-b)[0] ?? n.length;
+      for(const v of VERBS){const nv=norm(v); const i=n.indexOf(nv); if(i>-1 && (vIdx===-1||i<vIdx)){vIdx=i; verb=v;}}
+      let tIdx=-1, oIdx=-1, tConn=null, oConn=null;
+      for(const c of TOOL_CONNECTORS){const i=n.indexOf(norm(c)); if(i>-1 && (tIdx===-1||i<tIdx)){tIdx=i; tConn=c;}}
+      for(const c of OUT_CONNECTORS){const i=n.indexOf(norm(c)); if(i>-1 && (oIdx===-1||i<oIdx)){oIdx=i; oConn=c;}}
+      const startAfterVerb = vIdx>-1 ? vIdx+norm(verb).length : 0;
+      const firstBreak=[tIdx,oIdx].filter(x=>x>-1).sort((a,b)=>a-b)[0] ?? n.length;
       let domain = txt.substring(charIndexFromNorm(txt,startAfterVerb), charIndexFromNorm(txt,firstBreak)).replace(/^[\s:،.-]+|[\s:،.-]+$/g,"");
-      if(domain.split(/\s+/).filter(Boolean).length < 2){
-        const words=txt.split(/\s+/).filter(Boolean);
-        domain = words.slice(-4).join(" ");
-      }
-      // 4) الأداة
-      let toolPhrase="";
-      if(tIdx>-1){
-        const end = (oIdx>-1 && oIdx>tIdx) ? oIdx : n.length;
-        toolPhrase = txt.substring(charIndexFromNorm(txt,tIdx), charIndexFromNorm(txt,end)).trim();
-      }
-      // 5) المخرج
-      let outPhrase="";
-      if(oIdx>-1){ outPhrase = txt.substring(charIndexFromNorm(txt,oIdx)).trim(); }
-      else if(OUT_KW.some(k=>n.includes(norm(k)))){
-        outPhrase = "بإصدار تقرير وقياس مستوى الأداء وفق مؤشرات معتمدة";
-      }
-      return {verb,domain,toolPhrase:toolPhrase,outPhrase:outPhrase};
+      if(domain.split(/\s+/).filter(Boolean).length<2){ const words=txt.split(/\s+/).filter(Boolean); domain=words.slice(-4).join(" "); }
+      let toolPhrase=""; if(tIdx>-1){ const end=(oIdx>-1 && oIdx>tIdx)?oIdx:n.length; toolPhrase=txt.substring(charIndexFromNorm(txt,tIdx), charIndexFromNorm(txt,end)).trim(); }
+      let outPhrase="";  if(oIdx>-1){ outPhrase=txt.substring(charIndexFromNorm(txt,oIdx)).trim(); }
+      else if(OUT_KW.some(k=>n.includes(norm(k)))){ outPhrase="بإصدار تقرير وقياس مستوى الأداء وفق مؤشرات معتمدة"; }
+      return {verb,domain,toolPhrase,outPhrase,tConn,oConn};
     }
 
-    function hasTool(text){const n=norm(text||""); return TOOL_CONNECTORS.some(c=>n.includes(norm(c))) || TOOL_KW.some(k=>n.includes(norm(k)));}
-    function hasOut(text){const n=norm(text||""); return OUT_CONNECTORS.some(c=>n.includes(norm(c))) || OUT_KW.some(k=>n.includes(norm(k)));}
+    function hasTool(text){const n=norm(text||""); return TOOL_CONNECTORS.some(c=>n.includes(norm(c)))||TOOL_KW.some(k=>n.includes(norm(k)));}
+    function hasOut(text){const n=norm(text||""); return OUT_CONNECTORS.some(c=>n.includes(norm(c)))||OUT_KW.some(k=>n.includes(norm(k)));}
 
     function buildSuggestions({verb,domain}){
       const v = verb || "مراقبة";
@@ -105,71 +306,61 @@
       return [s1,s2,s3];
     }
 
-    /* ========= تحليل مهمة واحدة ========= */
+    function analyzeTask(){
+      const input = document.getElementById("taskInput").value.trim();
+      const out = document.getElementById("output");
+      if(!input){ out.innerHTML = '<span class="status-bad">يرجى إدخال مهمة واحدة على الأقل</span>'; return; }
+      const lines = input.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      out.innerHTML = lines.map((t,i)=>analyzeSingleTask(t,i)).join("");
+    }
+
     function analyzeSingleTask(text,index){
       const {verb,domain,toolPhrase,outPhrase} = extractPieces(text);
+      const okVerb=!!verb;
+      const okDom=(domain||"").split(/\s+/).filter(Boolean).length>=2;
+      const okTool=hasTool(toolPhrase||text);
+      const okOut =hasOut(outPhrase||text);
 
-      const okVerb   = !!verb;
-      const okDom    = (domain||"").split(/\s+/).filter(Boolean).length >= 2;
-      const okTool   = hasTool(toolPhrase || text);
-      const okOut    = hasOut(outPhrase || text);
-
-      const missing=[];
-      if(!okVerb) missing.push("فعل تنظيمي");
-      if(!okDom)  missing.push("مجال واضح");
-      if(!okTool) missing.push("أداة تنظيمية");
-      if(!okOut)  missing.push("مخرج للمهمة");
-
-      const isValid = missing.length===0;
+      const missing=[]; if(!okVerb)missing.push("فعل تنظيمي"); if(!okDom)missing.push("مجال واضح"); if(!okTool)missing.push("أداة تنظيمية"); if(!okOut)missing.push("مخرج للمهمة");
+      const isValid=missing.length===0;
       const suggestions = buildSuggestions({verb,domain});
 
       return `
-        <div style="border:1px solid #ccc; padding:15px; margin-top:15px">
-          <strong>المهمة ${index+1}</strong><br><br>
-
+        <div class="task-card">
+          <h2>المهمة ${index+1}</h2>
           ${isValid
-            ? `<span class="ok">✔ الصياغة صحيحة ومنضبطة (${escapeHTML(verb)} + مجال + أداة + مخرج)</span>`
-            : `<span class="bad">✖ الصياغة غير مكتملة</span>`}
-
-          <br><br>
+            ? `<div class="status-ok">✔ الصياغة صحيحة ومنضبطة (${escapeHTML(verb)} + مجال + أداة + مخرج)</div>`
+            : `<div class="status-bad">✖ الصياغة غير مكتملة</div>`}
 
           ${!isValid ? `
-            <b>العناصر الناقصة:</b>
+            <h3>العناصر الناقصة:</h3>
             <ul>${missing.map(m=>`<li>${m}</li>`).join("")}</ul>
 
-            <b>مقترحات صياغة منضبطة:</b><br><br>
+            <h3>مقترحات صياغة منضبطة:</h3>
             ${suggestions.map((s,i)=>`
-              <div style="background:#f5f5f5;padding:10px;margin-bottom:8px" data-suggestion-block>
+              <div class="suggest" data-suggestion-block>
                 <div data-s-text>${s}</div>
-                <br>
-                <button onclick="applySuggestion(${index},${i})">اعتماد هذه الصياغة</button>
+                <div class="actions" style="margin:8px 0 0;">
+                  <button class="btn btn-secondary" onclick="applySuggestion(${index},${i})">اعتماد هذه الصياغة</button>
+                </div>
               </div>
             `).join("")}
           ` : `
-            <div style="background:#eef;padding:10px">
-              <span class="verb">${escapeHTML(verb||"—")}</span> /
-              <span class="domain">${okDom?"المجال واضح":"—"}</span> /
-              <span class="tool">${okTool?"أداة تنظيمية":"—"}</span> /
-              <span class="output">${okOut?"مخرج محدد":"—"}</span>
+            <div class="chips">
+              <span class="chip"><span class="verb">${escapeHTML(verb||"—")}</span></span>
+              <span class="chip"><span class="domain">${okDom?"مجال واضح":"—"}</span></span>
+              <span class="chip"><span class="tool">${okTool?"أداة تنظيمية":"—"}</span></span>
+              <span class="chip"><span class="output">${okOut?"مخرج محدد":"—"}</span></span>
             </div>
           `}
         </div>
       `;
     }
 
-    /* ========= الواجهة ========= */
-    function analyzeTask(){
-      const input = document.getElementById("taskInput").value.trim();
-      const out = document.getElementById("output");
-      if(!input){ out.innerHTML = '<span class="bad">يرجى إدخال مهمة واحدة على الأقل</span>'; return; }
-      const lines = input.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-      out.innerHTML = lines.map((t,i)=>analyzeSingleTask(t,i)).join("");
-    }
-
     function applySuggestion(taskIndex,suggestionIndex){
       const inputEl = document.getElementById('taskInput');
       const blocks  = document.querySelectorAll('[data-suggestion-block]');
-      const block   = blocks[taskIndex*3 + suggestionIndex]; // 3 اقتراحات لكل مهمة
+      const block   = blocks[taskIndex*3 + suggestionIndex];
       if(!block){ alert('تعذّر العثور على الصياغة.'); return; }
       const html  = block.querySelector('[data-s-text]')?.innerHTML || '';
       const plain = html.replace(/<[^>]+>/g,'').replace(/\s*\.\s*$/,'');
@@ -183,14 +374,13 @@
       document.getElementById('taskInput').value='';
       document.getElementById('output').innerHTML='';
     }
-
     async function copyOut(){
       const txt = document.getElementById('output').innerText || '';
       try{ await navigator.clipboard.writeText(txt); alert('تم النسخ'); }
       catch{ alert('تعذّر النسخ'); }
     }
 
-    // لجعل الدوال متاحة عالميًا (لأزرار onclick)
+    // نجعل الدوال عامة
     window.analyzeTask = analyzeTask;
     window.applySuggestion = applySuggestion;
     window.clearAll = clearAll;
