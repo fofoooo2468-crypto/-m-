@@ -1,95 +1,99 @@
-
 const VERBS = ["مراقبة","متابعة","تفتيش","تقييم","إشراف","حوكمة","إدارة","تنظيم","اعتماد","تصنيف","ترخيص","تطوير","حل"];
-const TOOL_KW = ["معايير","سياسات","لوائح","أطر"];
-const OUT_KW = ["تقرير","نتائج","مستوى","توصيات"];
+const TOOLS = ["معايير","سياسات","لوائح","أطر"];
+const OUTPUTS = ["تقرير","نتائج","مستوى","توصيات"];
 
-function norm(s){return (s||"").replace(/[إأآا]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").trim();}
-function uniq(arr){return [...new Set(arr.filter(Boolean))];}
+const norm = s =>
+  (s||"")
+  .replace(/[إأآا]/g,"ا")
+  .replace(/ى/g,"ي")
+  .replace(/ة/g,"ه");
 
-function findAllVerbs(text){
+const uniq = a => [...new Set(a.filter(Boolean))];
+
+function findVerbs(text){
   const n = norm(text);
   return uniq(VERBS.filter(v => n.includes(norm(v))));
 }
 
-function splitDomains(text, verbsFound){
-  let n = text;
-  verbsFound.forEach(v => n = n.replace(new RegExp(v,"g"), ""));
-  const parts = n.split(/[,،]|(?:\sو\s)/g).map(s=>s.trim()).filter(s=>s.split(/\s+/).length>=2);
-  return uniq(parts);
+function splitDomains(text, verbs){
+  let t = text;
+  verbs.forEach(v => t = t.replace(new RegExp(v,"g"),""));
+  return uniq(
+    t.split(/[,،]|(?:\sو\s)/)
+     .map(s=>s.trim())
+     .filter(s=>s.split(" ").length >= 2)
+  );
 }
 
-function detectTool(text){ return TOOL_KW.find(k => text.includes(k)) || ""; }
-function detectOutput(text){ return OUT_KW.find(k => text.includes(k)) || ""; }
+const detect = (arr,text) => arr.find(k => text.includes(k)) || "";
 
-function unifySentence(verb, domain, toolPhrase, outPhrase){
-  const v = verb || "مراقبة";
-  const d = domain || "المجال";
-  const tool = toolPhrase ? `من خلال ${toolPhrase}` : "من خلال معايير تنظيمية معتمدة";
-  const out  = outPhrase ? `بما ينتج عنه ${outPhrase}` : "بما ينتج عنه إعداد تقرير إشرافي";
-  return `${v} ${d} ${tool} ${out}`;
+function buildSentence(v,d,tool,out){
+  return `${v||"مراقبة"} ${d||"المجال"} ` +
+         `${tool?`من خلال ${tool}`:"من خلال معايير تنظيمية معتمدة"} ` +
+         `${out?`بما ينتج عنه ${out}`:"بما ينتج عنه إعداد تقرير إشرافي"}`;
 }
 
-function analyzeTask(){
-  const input = document.getElementById("taskInput").value.trim();
-  const out = document.getElementById("output");
-  if(!input){ out.innerHTML = "<div>يرجى إدخال مهمة</div>"; return; }
+function analyze(){
+  const input = taskInput.value.trim();
+  if(!input){ output.innerHTML="يرجى إدخال مهمة"; return; }
 
-  const tasks = input.split(/\r?\n/).filter(Boolean);
-  out.innerHTML = tasks.map((t,i)=>renderTaskCard(t,i)).join("");
+  output.innerHTML = input
+    .split(/\n+/)
+    .map((t,i)=>renderCard(t,i))
+    .join("");
+
+  bindApprove();
 }
 
-function renderTaskCard(text,index){
-  const verbsFound = findAllVerbs(text);
-  const domains = splitDomains(text, verbsFound);
-  const toolPhrase = detectTool(text);
-  const outPhrase  = detectOutput(text);
+function renderCard(text,i){
+  const v = findVerbs(text);
+  const d = splitDomains(text,v);
+  const tool = detect(TOOLS,text);
+  const out  = detect(OUTPUTS,text);
 
-  const table = `
-    <table border="1" style="width:100%;margin-top:8px;text-align:center">
-      <tr><th>الأفعال</th><th>المجالات</th><th>الأداة</th><th>المخرج</th></tr>
-      <tr><td>${verbsFound.join("، ")||"-"}</td><td>${domains.join(" | ")||"-"}</td><td>${toolPhrase||"-"}</td><td>${outPhrase||"-"}</td></tr>
-    </table>
-  `;
-
-  const suggestions = [];
-  const vList = verbsFound.length ? verbsFound : ["مراقبة"];
-  const dList = domains.length ? domains : ["المجال"];
-  vList.forEach(v=>{
-    dList.forEach(d=>{
-      suggestions.push(unifySentence(v,d,toolPhrase,outPhrase));
+  const suggestions=[];
+  (v.length?v:["مراقبة"]).forEach(x=>{
+    (d.length?d:["المجال"]).forEach(y=>{
+      suggestions.push(buildSentence(x,y,tool,out));
     });
   });
 
   return `
-    <div class="task-card">
-      <h2>المهمة ${index+1}</h2>
-      ${table}
-      <h3>مقترحات صياغة منضبطة:</h3>
-      ${suggestions.map(s=>`
-        <div class="suggest">
-          ${s}
-          <button class="btn btn-secondary" onclick="approveSuggestion('${s}')">اعتماد</button>
-        </div>
-      `).join("")}
-    </div>
-  `;
+  <div class="task-card">
+    <h2>المهمة ${i+1}</h2>
+    <table>
+      <tr><th>الأفعال</th><th>المجالات</th><th>الأداة</th><th>المخرج</th></tr>
+      <tr>
+        <td>${v.join("،")||"-"}</td>
+        <td>${d.join(" | ")||"-"}</td>
+        <td>${tool||"-"}</td>
+        <td>${out||"-"}</td>
+      </tr>
+    </table>
+
+    <h3>مقترحات صياغة:</h3>
+    ${suggestions.map(s=>`
+      <div class="suggest">
+        <span>${s}</span>
+        <button class="btn btn-secondary approve" data-text="${encodeURIComponent(s)}">اعتماد</button>
+      </div>`).join("")}
+  </div>`;
 }
 
-function approveSuggestion(s){
-  const list = document.getElementById("approvedList");
-  const card = document.createElement("div");
-  card.className = "approved-card";
-  card.textContent = s;
-  list.appendChild(card);
+function bindApprove(){
+  document.querySelectorAll(".approve").forEach(b=>{
+    b.onclick=()=> {
+      const card=document.createElement("div");
+      card.className="approved-card";
+      card.textContent=decodeURIComponent(b.dataset.text);
+      approvedList.appendChild(card);
+    };
+  });
 }
 
-document.getElementById("analyzeBtn").onclick = analyzeTask;
-document.getElementById("clearBtn").onclick = () => {
-  document.getElementById("taskInput").value="";
-  document.getElementById("output").innerHTML="";
-};
-document.getElementById("copyBtn").onclick = async () => {
-  const txt = document.getElementById("output").innerText;
-  await navigator.clipboard.writeText(txt);
+analyzeBtn.onclick = analyze;
+clearBtn.onclick = ()=>{ taskInput.value=""; output.innerHTML=""; };
+copyBtn.onclick = ()=> {
+  navigator.clipboard.writeText(output.innerText);
   alert("تم النسخ");
 };
