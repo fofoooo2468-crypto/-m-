@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>محرك التقييم الذكي للمهام التنظيمية</title>
+<title>أداة تحليل المهام التنظيمية (صارمة)</title>
 
 <style>
 body {
@@ -22,8 +22,10 @@ textarea {
   min-height: 120px;
   padding: 10px;
 }
-button { padding: 10px 16px; margin-top: 10px; cursor: pointer; }
-
+button {
+  padding: 10px 16px;
+  cursor: pointer;
+}
 table {
   width: 100%;
   border-collapse: collapse;
@@ -37,15 +39,6 @@ th, td {
 }
 th { background: #eee; }
 
-.badge {
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-.good { background:#d4edda; }
-.mid { background:#fff3cd; }
-.bad { background:#f8d7da; }
-
 .note {
   background:#f9f5ef;
   padding:10px;
@@ -58,11 +51,11 @@ th { background: #eee; }
 <body>
 <div class="container">
 
-<h2>🧠 محرك التقييم الذكي للمهام (قبل الاعتماد)</h2>
+<h2>🧠 أداة تحليل المهام التنظيمية (بدون افتراضات)</h2>
 
 <div class="panel">
-<textarea id="input" placeholder="أدخلي نص المهمة..."></textarea>
-<button onclick="run()">تحليل وتقييم</button>
+<textarea id="input" placeholder="أدخل مهمة أو أكثر (كل مهمة بسطر)..."></textarea><br>
+<button onclick="analyze()">تحليل</button>
 </div>
 
 <div id="result"></div>
@@ -70,86 +63,102 @@ th { background: #eee; }
 </div>
 
 <script>
-const VERBS = ["تنظيم","تحفيز","إشراف","رقابة","تقويم","تقييم","اعتماد","إدارة","تطوير","متابعة"];
-const OUTPUTS = ["تقرير","نتائج","مستوى","توصيات","برامج","إطار"];
+// قوائم استكشاف فقط (لا تُستخدم للإضافة)
+const VERBS = [
+  "تنفيذ","مراجعة","تنظيم","إشراف","رقابة",
+  "تقييم","تقويم","اعتماد","إدارة","تطوير","متابعة"
+];
 
-function run() {
-  const text = document.getElementById("input").value.trim();
+const TOOLS = ["لوائح","سياسات","أطر","معايير","إجراءات"];
+const OUTPUTS = ["تقرير","نتائج","مستوى","توصيات","قرارات","برامج"];
+
+function analyze() {
+  const input = document.getElementById("input").value.trim();
   const box = document.getElementById("result");
   box.innerHTML = "";
-  if (!text) return;
+  if (!input) return;
 
-  const verbs = VERBS.filter(v => text.includes(v));
-  const outputs = OUTPUTS.filter(o => text.includes(o));
+  const lines = input.split(/\n+/).filter(Boolean);
 
-  const units = splitTasks(verbs, outputs);
+  lines.forEach((line, idx) => {
+    const verbs = findItems(line, VERBS);
+    const tools = findItems(line, TOOLS);
+    const outputs = findItems(line, OUTPUTS);
 
-  units.forEach((unit, i) => {
-    const eval = evaluate(unit, verbs, outputs);
-    box.innerHTML += render(unit, i + 1, eval);
+    // تقسيم صارم: كل فعل = مهمة
+    if (verbs.length > 0) {
+      verbs.forEach((verb, i) => {
+        box.innerHTML += renderTask({
+          index: `${idx + 1}.${i + 1}`,
+          verb: verb,
+          domain: extractDomain(line, verb),
+          tool: tools[0] || "-",
+          output: outputs[0] || "-"
+        });
+      });
+    } else {
+      // لا يوجد فعل = مهمة واحدة ناقصة
+      box.innerHTML += renderTask({
+        index: idx + 1,
+        verb: "-",
+        domain: line || "-",
+        tool: tools[0] || "-",
+        output: outputs[0] || "-"
+      });
+    }
   });
 }
 
-function splitTasks(verbs, outputs) {
-  if (verbs.length > 1 || outputs.length > 1) {
-    return verbs.length ? verbs : ["-"];
-  }
-  return [verbs[0] || "-"];
+// استخراج بدون افتراض
+function findItems(text, list) {
+  return list.filter(item => text.includes(item));
 }
 
-function evaluate(verb, verbs, outputs) {
-  let score = 0;
-  let notes = [];
-
-  if (verb !== "-") score++; else notes.push("غياب فعل تنظيمي واضح");
-  if (verbs.length === 1) score++; else notes.push("تعدد الأفعال يستلزم التقسيم");
-  notes.push("لم يتم تحديد أداة تنفيذ");
-  if (outputs.length === 1) score++; else notes.push("غياب مخرج قابل للقياس");
-  notes.push("المجال غير محدد بدقة");
-
-  let level = "ضعيفة", cls = "bad";
-  if (score >= 4) { level="ناضجة"; cls="good"; }
-  else if (score >= 2) { level="متوسطة"; cls="mid"; }
-
-  return { score, level, cls, notes };
+// استخراج المجال حرفيًا فقط
+function extractDomain(text, verb) {
+  if (!verb || verb === "-") return "-";
+  let d = text.replace(verb, "").trim();
+  d = d.replace(/^و|،/g, "").trim();
+  return d || "-";
 }
 
-function render(verb, index, eval) {
+// عرض المهمة
+function renderTask(data) {
   return `
   <div class="card">
-    <h3>المهمة ${index}</h3>
+    <h3>المهمة ${data.index}</h3>
 
     <table>
       <tr>
-        <th>الأفعال</th>
-        <th>المجالات</th>
+        <th>الفعل</th>
+        <th>المجال</th>
         <th>الأداة</th>
         <th>المخرج</th>
       </tr>
       <tr>
-        <td>${verb}</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
+        <td>${data.verb}</td>
+        <td>${data.domain}</td>
+        <td>${data.tool}</td>
+        <td>${data.output}</td>
       </tr>
     </table>
 
-    <p>
-      <strong>التقييم:</strong>
-      <span class="badge ${eval.cls}">
-        ${eval.level} (${eval.score}/5)
-      </span>
-    </p>
-
     <div class="note">
-      <strong>📌 ملاحظات آلية:</strong><br>
-      ${eval.notes.map(n=>"• "+n).join("<br>")}
-      <hr>
-      <strong>✍️ مقترح صياغة:</strong><br>
-      ${verb} المجال من خلال أداة تنظيمية معتمدة بما ينتج عنه مخرج قابل للقياس
+      <strong>✍️ مقترح صياغة (اختياري – خارج الجدول):</strong><br>
+      ${buildSuggestion(data)}
     </div>
   </div>
   `;
+}
+
+// المقترح فقط هنا (غير ملزم)
+function buildSuggestion(d) {
+  let parts = [];
+  if (d.verb !== "-") parts.push(d.verb);
+  if (d.domain !== "-") parts.push(d.domain);
+  if (d.tool === "-") parts.push("من خلال أداة تنظيمية معتمدة");
+  if (d.output === "-") parts.push("بما ينتج عنه مخرج قابل للقياس");
+  return parts.join(" ");
 }
 </script>
 
