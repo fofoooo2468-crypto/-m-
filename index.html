@@ -1,38 +1,50 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>محلل المهام التنظيمية</title>
-  style.css
+  <title>محلل صياغة المهام التنظيمية</title>
+
+  <!-- خط عربي مضمون -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <div class="brand-band">
-      <h1>محلل صياغة المهام التنظيمية</h1>
-      <h3>يقيّم المهمة وفق أربعة عناصر: <span class="verb">فعل تنظيمي</span> + <span class="domain">مجال واضح</span> + <span class="tool">أداة تنظيمية</span> + <span class="output">مخرج</span>.</h3>
-    </div>
 
-    <div class="panel">
-      <label for="taskInput">أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):</label>
-      <textarea id="taskInput" placeholder="مثال:
-متابعة ومراقبة خدمات شركات تقديم الخدمة وتطوير نشاطهم بالمدينة المنورة، والإسهام في حل المشكلات والصعوبات التي تواجههم"></textarea>
-
-      <div class="actions">
-        <button type="button" class="btn btn-primary" id="analyzeBtn">تحليل المهام</button>
-        <button type="button" class="btn btn-secondary" id="clearBtn">مسح الإدخال</button>
-        <button type="button" class="btn btn-ghost" id="copyBtn">نسخ المخرجات</button>
-      </div>
-
-      <div class="result" id="output"></div>
-    </div>
-
-    <div class="approved-section">
-      <h2>الصياغات المعتمدة</h2>
-      <div id="approvedList" class="approved-list"></div>
-    </div>
+<div class="container">
+  <div class="brand-band">
+    <h1>محلل صياغة المهام التنظيمية</h1>
+    <h3>
+      يقيّم المهمة وفق أربعة عناصر:
+      <span class="tag verb">فعل تنظيمي</span> +
+      <span class="tag domain">مجال</span> +
+      <span class="tag tool">أداة تنظيمية</span> +
+      <span class="tag output">مخرج</span>
+    </h3>
   </div>
-  <script src="script</body>
+
+  <div class="panel">
+    <label for="taskInput">أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):</label>
+    <textarea id="taskInput" rows="4"
+      placeholder="مثال:
+متابعة ومراقبة خدمات شركات تقديم الخدمة وتطوير نشاطهم بالمدينة المنورة"></textarea>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="analyzeBtn">تحليل المهام</button>
+      <button class="btn btn-secondary" id="clearBtn">مسح</button>
+      <button class="btn btn-ghost" id="copyBtn">نسخ النتائج</button>
+    </div>
+
+    <div class="result" id="output"></div>
+  </div>
+
+  <div class="approved-section">
+    <h2>الصياغات المعتمدة</h2>
+    <div id="approvedList"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
 </html>
-``
