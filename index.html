@@ -1,25 +1,13 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<title>أداة تقييم وصياغة المهام الذكية</title>
+<meta charset="UTF-8">
+<title>أداة تقييم واعتماد المهام التنظيمية</title>
 
 <style>
-:root {
-  --color-bg: #f5ede3;
-  --color-gold: #d7a562;
-  --color-ink: #00080b;
-  --color-navy: #174766;
-  --radius: 10px;
-  --shadow: 0 2px 8px rgba(0,0,0,.06);
-  --border: 1px solid #e9e0d3;
-}
-
 body {
-  font-family: "Arial", sans-serif;
-  background: var(--color-bg);
-  color: var(--color-ink);
-  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5ede3;
   padding: 24px;
 }
 
@@ -28,82 +16,55 @@ body {
   margin: auto;
 }
 
-h1 {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-.panel {
+.panel, .task-card {
   background: #fff;
   padding: 16px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
 
 textarea {
   width: 100%;
   min-height: 120px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-}
-
-.actions {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
+  padding: 10px;
 }
 
 button {
   padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
+  margin-top: 10px;
   cursor: pointer;
-  font-size: 14px;
-}
-
-.primary {
-  background: var(--color-gold);
-}
-
-.secondary {
-  background: var(--color-navy);
-  color: #fff;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 th, td {
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   padding: 8px;
-  font-size: 13.5px;
   text-align: center;
+  font-size: 13px;
 }
 
-th {
-  background: #f2f2f2;
+th { background: #eee; }
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
 }
 
-.task-card {
-  background: #fff;
-  padding: 14px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  margin-top: 16px;
-}
+.good { background: #d4edda; }
+.mid { background: #fff3cd; }
+.bad { background: #f8d7da; }
 
 .suggestion {
   background: #f9f5ef;
   padding: 10px;
   border-radius: 8px;
-  margin-top: 8px;
-  font-size: 13px;
+  margin-top: 10px;
 }
 </style>
 </head>
@@ -111,43 +72,36 @@ th {
 <body>
 <div class="container">
 
-<h1>🧠 أداة ذكية لتقييم وصياغة المهام</h1>
+<h2>🧠 نموذج التقييم الآلي للمهام قبل الاعتماد</h2>
 
 <div class="panel">
-  <label>أدخلي نص المهمة كما هو:</label>
-  <textarea id="taskInput"></textarea>
-
-  <div class="actions">
-    <button class="primary" onclick="analyzeTask()">تحليل المهمة</button>
-    <button class="secondary" onclick="resetAll()">مسح</button>
-  </div>
+  <textarea id="taskInput" placeholder="أدخلي نص المهمة هنا..."></textarea>
+  <button onclick="analyze()">تحليل وتقييم</button>
 </div>
 
-<div id="results"></div>
+<div id="output"></div>
 
 </div>
 
 <script>
-const knownVerbs = [
-  "تنظيم","تحفيز","إشراف","اعتماد","رقابة","تقويم","تقييم","إدارة","تطوير","متابعة"
-];
+const VERBS = ["تنظيم","تحفيز","إشراف","اعتماد","رقابة","تقويم","تقييم","إدارة","تطوير","متابعة"];
 
-function analyzeTask() {
+function analyze() {
   const text = document.getElementById("taskInput").value.trim();
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML = "";
-
+  const out = document.getElementById("output");
+  out.innerHTML = "";
   if (!text) return;
 
-  const verbsFound = knownVerbs.filter(v => text.includes(v));
-  const tasks = verbsFound.length > 1 ? verbsFound : [verbsFound[0] || "-"];
+  const verbs = VERBS.filter(v => text.includes(v));
+  const tasks = verbs.length > 1 ? verbs : [verbs[0] || "-"];
 
-  tasks.forEach((verb, index) => {
+  tasks.forEach((verb, i) => {
+    const evalResult = evaluateTask(text, verbs);
     const card = document.createElement("div");
     card.className = "task-card";
 
     card.innerHTML = `
-      <h3>المهمة ${index + 1}</h3>
+      <h3>المهمة ${i + 1}</h3>
 
       <table>
         <tr>
@@ -157,54 +111,61 @@ function analyzeTask() {
           <th>المخرج</th>
         </tr>
         <tr>
-          <td>${verb || "-"}</td>
-          <td>${extractField(text) || "-"}</td>
+          <td>${verb}</td>
+          <td>${detectDomain(text)}</td>
           <td>-</td>
           <td>-</td>
         </tr>
       </table>
 
+      <p>
+        <strong>نتيجة التقييم:</strong>
+        <span class="badge ${evalResult.levelClass}">
+          ${evalResult.levelText}
+        </span>
+        ( ${evalResult.score} / 5 )
+      </p>
+
       <div class="suggestion">
-        <strong>📌 مقترحات تحسين (غير ملزمة):</strong><br>
-        • الأداة المقترحة: ${suggestTool(verb)}<br>
-        • المخرج المقترح: ${suggestOutput(verb)}<br>
-        • تصنيف المهمة (مقترح): ${suggestType(verb)}
+        <strong>📌 مقترحات تحسين مبنية على التقييم:</strong><br>
+        ${evalResult.notes.join("<br>")}
+        <hr>
+        <strong>✍️ صياغة مقترحة:</strong><br>
+        ${generateSuggestion(verb, detectDomain(text))}
       </div>
     `;
 
-    resultsDiv.appendChild(card);
+    out.appendChild(card);
   });
 }
 
-function extractField(text) {
+function evaluateTask(text, verbs) {
+  let score = 0;
+  let notes = [];
+
+  if (verbs.length) score++; else notes.push("• لا يوجد فعل تنظيمي واضح");
+  if (verbs.length === 1) score++; else notes.push("• تحتوي المهمة على أكثر من فعل");
+  if (detectDomain(text) !== "-") score++; else notes.push("• المجال غير محدد");
+  notes.push("• يُفضل تحديد أداة تنفيذ");
+  notes.push("• يُفضل تحديد مخرج قابل للقياس");
+
+  let levelText = "ضعيفة";
+  let levelClass = "bad";
+
+  if (score >= 4) { levelText = "ناضجة"; levelClass = "good"; }
+  else if (score >= 2) { levelText = "متوسطة"; levelClass = "mid"; }
+
+  return { score, levelText, levelClass, notes };
+}
+
+function detectDomain(text) {
   if (text.includes("منظومة")) return "منظومة العمرة";
-  if (text.includes("أنظمة")) return "الأنظمة واللوائح";
+  if (text.includes("أنظمة") || text.includes("لوائح")) return "الأنظمة واللوائح";
   return "-";
 }
 
-function suggestTool(verb) {
-  if (verb === "تنظيم") return "أطر ولوائح تنظيمية";
-  if (verb === "تحفيز") return "حوافز وبرامج تمكين";
-  if (verb === "رقابة" || verb === "تقويم") return "معايير ومؤشرات";
-  return "أداة تنظيمية";
-}
-
-function suggestOutput(verb) {
-  if (verb === "تنظيم") return "إطار تنظيمي معتمد";
-  if (verb === "تحفيز") return "برامج تحفيزية معتمدة";
-  if (verb === "تقويم") return "تقرير تقويم";
-  return "مخرج قابل للقياس";
-}
-
-function suggestType(verb) {
-  if (verb === "تنظيم" || verb === "اعتماد") return "استراتيجية";
-  if (verb === "رقابة" || verb === "تقويم") return "رقابية";
-  return "تشغيلية";
-}
-
-function resetAll() {
-  document.getElementById("taskInput").value = "";
-  document.getElementById("results").innerHTML = "";
+function generateSuggestion(verb, domain) {
+  return `${verb} ${domain || "المجال"} من خلال أطر ومعايير معتمدة بما ينتج عنه مخرج تنظيمي قابل للقياس`;
 }
 </script>
 
