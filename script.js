@@ -1,41 +1,58 @@
-const VERBS = ["مراقبة","متابعة","تفتيش","تقييم","إشراف","حوكمة","إدارة","تنظيم","اعتماد","تصنيف","ترخيص","تطوير","حل"];
-const TOOLS = ["معايير","سياسات","لوائح","أطر"];
-const OUTPUTS = ["تقرير","نتائج","مستوى","توصيات"];
+const VERBS = [
+  "إشراف","مراقبة","متابعة","تقييم","تقويم",
+  "تنظيم","اعتماد","ترخيص","تصنيف","حوكمة","تطوير","إدارة"
+];
 
-const norm = s =>
-  (s||"")
-  .replace(/[إأآا]/g,"ا")
-  .replace(/ى/g,"ي")
-  .replace(/ة/g,"ه");
+const TOOLS = ["لوائح","سياسات","معايير","أطر","أدلة"];
 
-const uniq = a => [...new Set(a.filter(Boolean))];
-
-function findVerbs(text){
-  const n = norm(text);
-  return uniq(VERBS.filter(v => n.includes(norm(v))));
+function extractVerb(text){
+  const first = text.trim().split(/\s+/)[0];
+  return VERBS.includes(first) ? first : "";
 }
 
-function splitDomains(text, verbs){
-  let t = text;
-  verbs.forEach(v => t = t.replace(new RegExp(v,"g"),""));
-  return uniq(
-    t.split(/[,،]|(?:\sو\s)/)
-     .map(s=>s.trim())
-     .filter(s=>s.split(" ").length >= 2)
-  );
+function extractDomain(text, verb){
+  let t = text.trim();
+
+  if (verb) {
+    t = t.replace(new RegExp("^" + verb + "\\s*(على)?"), "").trim();
+  }
+
+  return t
+    .replace(/^ال\s+/,"")
+    .replace(/\s{2,}/g," ");
 }
 
-const detect = (arr,text) => arr.find(k => text.includes(k)) || "";
+function detectTool(text){
+  return TOOLS.find(t => text.includes(t)) || "";
+}
 
-function buildSentence(v,d,tool,out){
-  return `${v||"مراقبة"} ${d||"المجال"} ` +
-         `${tool?`من خلال ${tool}`:"من خلال معايير تنظيمية معتمدة"} ` +
-         `${out?`بما ينتج عنه ${out}`:"بما ينتج عنه إعداد تقرير إشرافي"}`;
+function smartOutput(verb){
+  const map = {
+    "إشراف": "رفع تقارير إشرافية دورية",
+    "مراقبة": "قياس مستوى الالتزام",
+    "متابعة": "ضمان استمرارية التنفيذ",
+    "تقييم": "تحديد نقاط القوة والقصور",
+    "تقويم": "معالجة أوجه القصور وتعزيز الضبط",
+    "اعتماد": "إصدار قرارات اعتماد رسمية",
+    "تنظيم": "توحيد الإجراءات وتحقيق الاتساق",
+    "تطوير": "رفع الكفاءة وتحسين الأداء",
+    "حوكمة": "تعزيز الامتثال والانضباط المؤسسي"
+  };
+  return map[verb] || "تحقيق مستهدفات الجهة";
+}
+
+function buildSentence(verb, domain, tool){
+  return `${verb} ${domain} ` +
+         `${tool ? "وفق " + tool : "وفق أطر تنظيمية معتمدة"} ` +
+         `بما يحقق ${smartOutput(verb)}`;
 }
 
 function analyze(){
   const input = taskInput.value.trim();
-  if(!input){ output.innerHTML="يرجى إدخال مهمة"; return; }
+  if (!input) {
+    output.innerHTML = "يرجى إدخال مهمة";
+    return;
+  }
 
   output.innerHTML = input
     .split(/\n+/)
@@ -45,48 +62,42 @@ function analyze(){
   bindApprove();
 }
 
-function renderCard(text,i){
-  const v = findVerbs(text);
-  const d = splitDomains(text,v);
-  const tool = detect(TOOLS,text);
-  const out  = detect(OUTPUTS,text);
-
-  const suggestions=[];
-  (v.length?v:["مراقبة"]).forEach(x=>{
-    (d.length?d:["المجال"]).forEach(y=>{
-      suggestions.push(buildSentence(x,y,tool,out));
-    });
-  });
+function renderCard(text,index){
+  const verb = extractVerb(text) || "مراقبة";
+  const domain = extractDomain(text, verb);
+  const tool = detectTool(text);
+  const sentence = buildSentence(verb, domain, tool);
 
   return `
-  <div class="task-card">
-    <h2>المهمة ${i+1}</h2>
-    <table>
-      <tr><th>الأفعال</th><th>المجالات</th><th>الأداة</th><th>المخرج</th></tr>
-      <tr>
-        <td>${v.join("،")||"-"}</td>
-        <td>${d.join(" | ")||"-"}</td>
-        <td>${tool||"-"}</td>
-        <td>${out||"-"}</td>
-      </tr>
-    </table>
+    <div class="task-card">
+      <h2>المهمة ${index+1}</h2>
+      <table>
+        <tr><th>الفعل</th><th>المجال</th><th>الأداة</th><th>المخرج</th></tr>
+        <tr>
+          <td>${verb}</td>
+          <td>${domain}</td>
+          <td>${tool || "-"}</td>
+          <td>${smartOutput(verb)}</td>
+        </tr>
+      </table>
 
-    <h3>مقترحات صياغة:</h3>
-    ${suggestions.map(s=>`
+      <h3>صياغة منضبطة:</h3>
       <div class="suggest">
-        <span>${s}</span>
-        <button class="btn btn-secondary approve" data-text="${encodeURIComponent(s)}">اعتماد</button>
-      </div>`).join("")}
-  </div>`;
+        <span>${sentence}</span>
+        <button class="btn btn-secondary approve"
+          data-text="${encodeURIComponent(sentence)}">اعتماد</button>
+      </div>
+    </div>
+  `;
 }
 
 function bindApprove(){
-  document.querySelectorAll(".approve").forEach(b=>{
-    b.onclick=()=> {
-      const card=document.createElement("div");
-      card.className="approved-card";
-      card.textContent=decodeURIComponent(b.dataset.text);
-      approvedList.appendChild(card);
+  document.querySelectorAll(".approve").forEach(btn=>{
+    btn.onclick = ()=>{
+      const div = document.createElement("div");
+      div.className = "approved-card";
+      div.textContent = decodeURIComponent(btn.dataset.text);
+      approvedList.appendChild(div);
     };
   });
 }
