@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>محلل صياغة المهام التنظيمية</title>
 
-  <!-- خط عربي مضمون -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,28 +13,22 @@
 <div class="container">
   <div class="brand-band">
     <h1>محلل صياغة المهام التنظيمية</h1>
-    <h3>
-      يقيّم المهمة وفق أربعة عناصر:
-      <span class="tag verb">فعل تنظيمي</span> +
-      <span class="tag domain">مجال</span> +
-      <span class="tag tool">أداة تنظيمية</span> +
-      <span class="tag output">مخرج</span>
-    </h3>
+    <h3>تحليل المهمة وفق: فعل تنظيمي + مجال + أداة + مخرج</h3>
   </div>
 
   <div class="panel">
-    <label for="taskInput">أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):</label>
+    <label>أدخل مهمة أو أكثر (كل مهمة بسطر):</label>
     <textarea id="taskInput" rows="4"
       placeholder="مثال:
-متابعة ومراقبة خدمات شركات تقديم الخدمة وتطوير نشاطهم بالمدينة المنورة"></textarea>
+إشراف على جمع وصياغة ومراجعة الأنظمة والتشريعات واللوائح الداخلية المنظمة لأعمال الوزارة"></textarea>
 
     <div class="actions">
-      <button class="btn btn-primary" id="analyzeBtn">تحليل المهام</button>
+      <button class="btn btn-primary" id="analyzeBtn">تحليل</button>
       <button class="btn btn-secondary" id="clearBtn">مسح</button>
-      <button class="btn btn-ghost" id="copyBtn">نسخ النتائج</button>
+      <button class="btn btn-ghost" id="copyBtn">نسخ</button>
     </div>
 
-    <div class="result" id="output"></div>
+    <div id="output"></div>
   </div>
 
   <div class="approved-section">
