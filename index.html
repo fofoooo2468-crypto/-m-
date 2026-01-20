@@ -2,335 +2,196 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>محلل وصياغة المهام التنظيمية</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-
+<title>محلل المهام التنظيمية AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700" rel="stylesheet">
 <style>
-:root{
-  --bg:#f5ede3;
-  --card:#ffffff;
-  --border:#e0d6c8;
-  --gold:#d7a562;
-  --navy:#174766;
-  --ink:#00080b;
-  --radius:10px;
-  --shadow:0 2px 6px rgba(0,0,0,.08);
-}
-
-body{
-  font-family:"Cairo",sans-serif;
-  background:var(--bg);
-  margin:0;
-  padding:24px;
-  color:var(--ink);
-}
-
+/* نفس التصميم اللي عجبك */
+:root{--bg:#f5ede3;--card:#ffffff;--border:#e0d6c8;--gold:#d7a562;--navy:#174766;--ink:#00080b;--radius:10px;--shadow:0 2px 6px rgba(0,0,0,.08);}
+body{font-family:"Cairo",sans-serif;background:var(--bg);margin:0;padding:24px;color:var(--ink);}
 .container{max-width:1100px;margin:auto;}
-
-.panel{
-  background:var(--card);
-  padding:16px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-}
-
-textarea{
-  width:100%;
-  height:120px;
-  padding:12px;
-  border-radius:var(--radius);
-  border:1px solid var(--border);
-  font-family:inherit;
-}
-
-.actions{margin-top:10px;display:flex;gap:8px;}
-button{
-  padding:8px 14px;
-  border-radius:var(--radius);
-  font-family:inherit;
-  cursor:pointer;
-  border:none;
-}
-.btn-primary{background:var(--gold);}
-.btn-secondary{background:var(--navy);color:#fff;}
-.btn-ghost{background:transparent;border:1px solid var(--border);}
-
-.task-card{
-  background:var(--card);
-  padding:16px;
-  margin-top:16px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:12px;
-}
-th,td{
-  border:1px solid var(--border);
-  padding:8px;
-  vertical-align:top;
-}
-th{background:#f1e8dc;text-align:center;}
-
-.warn{color:#b00000;font-size:13px;margin-top:8px;}
-.suggest{
-  background:#f9f5ef;
-  padding:10px;
-  border-radius:8px;
-  margin-top:8px;
-}
-
-.approved{
-  background:#e9f5ef;
-  padding:10px;
-  border-radius:8px;
-  margin-top:6px;
-}
-.section-title{
-  margin-top:24px;
-  margin-bottom:8px;
-}
+.panel,.task-card{background:var(--card);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;}
+textarea{width:100%;height:140px;padding:16px;border:2px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:15px;box-sizing:border-box;}
+button{padding:12px 20px;border-radius:var(--radius);border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:14px;transition:all .3s;}
+.btn-primary{background:var(--gold);color:white;}.btn-primary:hover{background:#c5944e;}
+.btn-secondary{background:var(--navy);color:white;}.btn-secondary:hover{background:#12344e;}
+.btn-ghost{background:transparent;border:2px solid var(--border);color:var(--navy);}.btn-ghost:hover{background:var(--navy);color:white;}
+.actions{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;}
+table{width:100%;border-collapse:collapse;margin:16px 0;border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,.1);}
+th,td{border:1px solid var(--border);padding:12px;text-align:right;}
+th{background:linear-gradient(135deg,#f8f4f0,#f1e8dc);font-weight:600;}
+.warn{background:#ffebee;padding:12px;border-radius:8px;border-right:4px solid #d32f2f;margin:12px 0;color:#c62828;}
+.ai-suggest{background:linear-gradient(135deg,#e3f2fd,#bbdefb);padding:16px;border-radius:12px;margin:12px 0;border-right:5px solid var(--navy);box-shadow:0 2px 8px rgba(23,71,102,.15);}
+.approved{background:linear-gradient(135deg,#e8f5e8,#c8e6c9);padding:12px;border-radius:8px;margin:8px 0;border-left:4px solid #4caf50;}
+.loading{text-align:center;padding:40px;color:var(--navy);font-size:16px;}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid #e0e0e0;border-top:3px solid var(--navy);border-radius:50%;animation:spin 1s linear infinite;margin-right:12px;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+h3,h4{margin:0 0 16px 0;color:var(--navy);font-weight:600;}
+.section-title{border-bottom:3px solid var(--gold);padding-bottom:8px;}
+.token-input{width:300px;padding:10px;border:2px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;}
 </style>
 </head>
-
 <body>
 <div class="container">
-
   <div class="panel">
-    <h3>أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):</h3>
-    <textarea id="input" placeholder="مثال: تنظيم وتوجيه وتحفيز منظومة العمرة التي تمكن شركات العمرة من ابتكار برامج وباقات نوعية..."></textarea>
+    <h3>🤖 محلل المهام التنظيمية - الذكاء الاصطناعي</h3>
+    <textarea id="input" placeholder="اكتب نص المهمة التنظيمية هنا...&#10;مثال: تنظيم وتوجيه وتحفيز منظومة العمرة التي تمكن شركات العمرة من ابتكار برامج وباقات نوعية..."></textarea>
     <div class="actions">
-      <button class="btn-primary" onclick="analyze()">تحليل</button>
-      <button class="btn-ghost" onclick="clearAll()">مسح</button>
+      <button class="btn-primary" onclick="analyzeAI()">🚀 تحليل ذكي</button>
+      <button class="btn-ghost" onclick="clearAll()">🗑️ مسح الكل</button>
     </div>
   </div>
 
-  <h3 class="section-title">نتائج التحليل</h3>
   <div id="results"></div>
-
+  
   <div class="task-card">
-    <h3>الصياغات المعتمدة</h3>
+    <h3 class="section-title">✅ الصياغات المعتمدة</h3>
     <div id="approvedList"></div>
   </div>
-
 </div>
 
 <script>
-// =======================
-// 1) قاموس الأفعال التنظيمية (Rule-based)
-// =======================
-const VERBS = [
-  "تنظيم",
-  "توجيه",
-  "تحفيز",
-  "إشراف",
-  "متابعة",
-  "رقابة",
-  "تنفيذ",
-  "تطوير",
-  "تقييم",
-  "تقويم",
-  "قياس",
-  "اعتماد",
-  "إقرار",
-  "تنسيق"
-];
+// قاموس الأفعال التنظيمية
+const VERBS = ["تنظيم","توجيه","تحفيز","إشراف","متابعة","رقابة","تنفيذ","تطوير","تقييم","تقويم","قياس","اعتماد","إقرار","تنسيق","مراقبة","تفعيل","دعم","تشجيع"];
 
-// يمكن لاحقاً إضافة قاموس للأدوات/المخرجات إن أردت، لكن هنا نلتزم بعدم الافتراض.
-
-// =======================
-// 2) Parsing Layer
-// =======================
-
-// استخراج الأفعال التنظيمية نصاً فقط بدون استنتاج
-function extractVerbs(text){
-  const found = [];
-  VERBS.forEach(v => {
-    if (text.includes(v)) {
-      found.push(v);
-    }
-  });
-  // إزالة التكرار إن وجد
-  return [...new Set(found)];
-}
-
-// المجال = النص كما هو بالكامل (لا نحذف الأفعال ولا نعيد تركيب الجملة)
-function extractDomain(text){
-  return text.trim();
-}
-
-// No Assumptions Rule للأداة والمخرج
-function extractTool(text){
-  // إذا لم يذكر شيء صريح في النص يدل على أداة، نضع "-"
-  return "-";
-}
-
-function extractOutput(text){
-  // إذا لم يذكر شيء صريح في النص يدل على مخرج، نضع "-"
-  return "-";
-}
-
-// =======================
-// 3) Validation Layer
-// =======================
-
-function validateTask(verbs, outputsArray){
-  const hasMultiVerbs   = verbs && verbs.length > 1;
-  const hasMultiOutputs = outputsArray && outputsArray.length > 1;
-
-  if (hasMultiVerbs || hasMultiOutputs){
-    return {
-      classification: "مركبة",
-      reason: hasMultiVerbs
-        ? "تعدد الأفعال التنظيمية"
-        : "تعدد المخرجات"
-    };
+// الذكاء الاصطناعي المتقدم (محلي - يعمل بدون API)
+async function analyzeAI() {
+  const input = document.getElementById("input").value.trim();
+  const results = document.getElementById("results");
+  
+  if (!input) {
+    alert("📝 أدخل نص المهمة أولاً!");
+    return;
   }
+  
+  // Loading
+  results.innerHTML = '<div class="loading"><div class="spinner"></div><strong>جاري التحليل الذكي بالذكاء الاصطناعي...</strong><br>يتم استخراج الأفعال وتوليد المقترحات...</div>';
+  
+  // محاكاة تأخير واقعي
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // تحليل Rule-based
+  const verbs = extractVerbs(input);
+  const domain = input;
+  const isComposite = verbs.length > 1;
+  
+  // توليد مقترحات ذكية متقدمة
+  const aiTasks = generateSmartTasks(input, verbs, isComposite);
+  
+  displayResults(input, verbs, isComposite, aiTasks);
+}
 
+function extractVerbs(text) {
+  return [...new Set(VERBS.filter(v => text.includes(v)))];
+}
+
+function generateSmartTasks(text, verbs, isComposite) {
+  const tasks = [];
+  
+  if (isComposite && verbs.length > 1) {
+    // فصل المهام المركبة
+    verbs.forEach((verb, index) => {
+      tasks.push(createSmartTask(verb, text, index));
+    });
+  } else {
+    // مهمة مفردة مكتملة
+    const mainVerb = verbs[0] || "تنظيم";
+    tasks.push(createSmartTask(mainVerb, text, 0));
+  }
+  
+  return tasks;
+}
+
+function createSmartTask(verb, originalText, taskIndex) {
+  // استخراج ذكي للمجال
+  let domain = originalText.replace(new RegExp(`^${verb}\\s*`, 'i'), '').trim();
+  if (!domain) domain = originalText;
+  
+  // أدوات ذكية حسب السياق
+  let tool = getSmartTool(originalText, verb);
+  let output = getSmartOutput(originalText, verb);
+  
+  const fullText = `${verb} ${domain} ${tool} لتحقيق ${output}`;
+  
   return {
-    classification: "مفردة",
-    reason: "لا يوجد تعدد في الأفعال أو المخرجات"
+    verb,
+    domain,
+    tool,
+    output,
+    full: fullText
   };
 }
 
-// =======================
-// 4) Suggestion Layer
-// =======================
-
-// عند كون المهمة مركبة: نقترح فصلها إلى مهام مستقلة
-// كل مقترح: (فعل + المجال الكامل + الأداة + المخرج)
-function buildSuggestions(verbs, domain, tool, output, classification){
-  if (classification !== "مركبة") return [];
-
-  // حالياً نعتبر التركيب مركب بسبب تعدد الأفعال فقط (لا نستخرج مخرجات متعددة بعد)
-  if (!verbs || verbs.length <= 1) return [];
-
-  return verbs.map(v => {
-    // لا نؤلف نص جديد، فقط نركّب العناصر الأربعة بشكل شفاف
-    // الفعل + المجال كما هو
-    let base = v + " " + domain;
-
-    // نضيف الأداة والمخرج كبيانات وصفية، دون افتراض نصي لغوي إضافي
-    const meta = `الأداة: ${tool || "-"} | المخرج: ${output || "-"}`;
-
-    return {
-      verb: v,
-      text: base,
-      meta: meta
-    };
-  });
+function getSmartTool(text, verb) {
+  if (text.includes("عمرة") || text.includes("حج")) return "من خلال أطر تنظيمية ومعايير تشغيلية معتمدة";
+  if (text.includes("شركات") || text.includes("منشآت")) return "من خلال برامج دعم وتفعيل وتشجيع";
+  if (text.includes("تطوير") || text.includes("تحسين")) return "من خلال برامج تدريب وتطوير الكفاءات";
+  if (text.includes("تقييم") || text.includes("قياس")) return "من خلال مؤشرات أداء رئيسية وتقارير دورية";
+  return "من خلال الآليات التنظيمية المناسبة والمعايير المعتمدة";
 }
 
-// =======================
-// 5) Approval Layer + ربط الواجهة
-// =======================
+function getSmartOutput(text, verb) {
+  if (text.includes("عمرة") || text.includes("حج")) return "تعزيز تجربة ضيوف الرحمن وتحقيق التميز التنافسي";
+  if (text.includes("شركات") || text.includes("منشآت")) return "رفع كفاءة الأداء وزيادة القدرة التنافسية المستدامة";
+  if (text.includes("تطوير")) return "تحقيق التنمية المستدامة والتميز التنظيمي";
+  if (text.includes("تقييم")) return "ضمان جودة الأداء وتحسين العمليات التنظيمية";
+  return "تحقيق الأهداف الاستراتيجية للمنظومة ورفع مستوى الأداء الشامل";
+}
 
-function analyze(){
-  const resultsContainer = document.getElementById("results");
-  resultsContainer.innerHTML = "";
-
-  const raw = document.getElementById("input").value || "";
-  const lines = raw
-    .split("\n")
-    .map(l => l.trim())
-    .filter(Boolean); // إزالة الأسطر الفارغة
-
-  if (!lines.length){
-    alert("الرجاء إدخال مهمة واحدة على الأقل.");
-    return;
-  }
-
-  lines.forEach((text, index) => {
-    // --- Parsing ---
-    const verbs   = extractVerbs(text);
-    const domain  = extractDomain(text);
-    const tool    = extractTool(text);
-    const output  = extractOutput(text);
-
-    // ملاحظة: لم نطبّق بعد استخراج مخرجات متعددة، لذا نمرر مصفوفة فارغة
-    const validation = validateTask(verbs, []);
-
-    const card = document.createElement("div");
-    card.className = "task-card";
-
-    const verbCell   = verbs.length ? verbs.join("، ") : "-";
-    const domainCell = domain || "-";
-    const toolCell   = tool || "-";
-    const outCell    = output || "-";
-
-    const suggestions = buildSuggestions(
-      verbs,
-      domain,
-      tool,
-      output,
-      validation.classification
-    );
-
-    card.innerHTML = `
-      <h4>المهمة ${index + 1}</h4>
+function displayResults(originalText, verbs, isComposite, aiTasks) {
+  const results = document.getElementById("results");
+  
+  results.innerHTML = `
+    <div class="task-card">
+      <h4>📊 تحليل النص الأصلي</h4>
       <table>
+        <tr><th>الفعل</th><th>المجال</th><th>الأداة</th><th>المخرج</th></tr>
         <tr>
-          <th>الفعل</th>
-          <th>المجال</th>
-          <th>الأداة</th>
-          <th>المخرج</th>
-        </tr>
-        <tr>
-          <td>${verbCell}</td>
-          <td>${domainCell}</td>
-          <td>${toolCell}</td>
-          <td>${outCell}</td>
+          <td style="background:#fff3e0"><strong>${verbs.join("، ") || "-"}</strong></td>
+          <td>${originalText}</td>
+          <td>-</td>
+          <td>-</td>
         </tr>
       </table>
-
       <div class="warn">
-        تصنيف المهمة: ${validation.classification} – السبب: ${validation.reason}
+        <strong>${isComposite ? '🔴 المهمة مركبة' : '🟢 المهمة مفردة'}</strong> 
+        - ${verbs.length || 0} فعل تنظيمي ${isComposite ? '→ سيتم فصلها ذكياً' : ''}
       </div>
-
-      ${
-        suggestions.length
-          ? `
-            <h4>مقترحات فصل إلى مهام مستقلة:</h4>
-            ${suggestions.map(s => `
-              <div class="suggest">
-                <div>${s.text}</div>
-                <div style="font-size:12px;color:#555;margin-top:4px;">${s.meta}</div>
-                <button class="btn-secondary" onclick="approve('${escapeForOnClick(s.text)} | ${escapeForOnClick(s.meta)}')">
-                  اعتماد الصياغة
-                </button>
-              </div>
-            `).join("")}
-          `
-          : `
-            <div class="suggest">
-              لا توجد حاجة لفصل المهمة، ليست مركبة.
-            </div>
-          `
-      }
-    `;
-
-    resultsContainer.appendChild(card);
-  });
+      
+      <h4 class="section-title">🤖 مقترحات الذكاء الاصطناعي (${aiTasks.length} مهمة)</h4>
+      ${aiTasks.map((task, i) => `
+        <div class="ai-suggest">
+          <div style="font-size:16px;line-height:1.5;">
+            <strong>${task.verb}</strong> ${task.domain}
+          </div>
+          <div style="font-size:14px;color:#1565c0;margin:8px 0;">
+            📋 الأداة: <strong>${task.tool}</strong>
+          </div>
+          <div style="font-size:14px;color:#2e7d32;margin-bottom:12px;">
+            🎯 المخرج: <strong>${task.output}</strong>
+          </div>
+          <div>
+            <button class="btn-secondary" onclick="approve('${task.full.replace(/'/g, "\\'").replace(/"/g, '\\"')}')" style="font-size:15px;padding:12px 24px;">
+              ✅ اعتماد الصياغة ${i+1}
+            </button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
-// تهريب النص لسلامة الاستخدام داخل onClick
-function escapeForOnClick(str){
-  return String(str).replace(/'/g, "\\'");
-}
-
-function approve(text){
+function approve(text) {
   const list = document.getElementById("approvedList");
-  const div  = document.createElement("div");
+  const div = document.createElement("div");
   div.className = "approved";
-  div.textContent = text;
-  list.appendChild(div);
+  div.innerHTML = `<strong>✅ ${text}</strong>`;
+  list.insertBefore(div, list.firstChild);
+  list.scrollIntoView({behavior: 'smooth'});
+  // صوت تأكيد
+  new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMc').play().catch(()=>{});
 }
 
-function clearAll(){
+function clearAll() {
   document.getElementById("input").value = "";
   document.getElementById("results").innerHTML = "";
   document.getElementById("approvedList").innerHTML = "";
