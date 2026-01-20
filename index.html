@@ -9,7 +9,7 @@
 <style>
 :root{
   --bg:#f5ede3;
-  --card:#fff;
+  --card:#ffffff;
   --border:#e0d6c8;
   --gold:#d7a562;
   --navy:#174766;
@@ -26,7 +26,7 @@ body{
   color:var(--ink);
 }
 
-.container{max-width:1000px;margin:auto;}
+.container{max-width:1100px;margin:auto;}
 
 .panel{
   background:var(--card);
@@ -85,6 +85,13 @@ th{background:#f1e8dc;text-align:center;}
   border-radius:8px;
   margin-top:8px;
 }
+
+.approved{
+  background:#e9f5ef;
+  padding:10px;
+  border-radius:8px;
+  margin-top:6px;
+}
 </style>
 </head>
 
@@ -102,13 +109,15 @@ th{background:#f1e8dc;text-align:center;}
 
 <div id="results"></div>
 
+<div class="task-card">
+<h3>الصياغات المعتمدة</h3>
+<div id="approvedList"></div>
+</div>
+
 </div>
 
 <script>
-const VERBS = [
-  "تنظيم","توجيه","تحفيز","إشراف","متابعة","رقابة",
-  "تنفيذ","تطوير","تقييم","تقويم","اعتماد","إدارة","مراجعة"
-];
+const VERBS = ["تنظيم","توجيه","تحفيز","إشراف","متابعة","رقابة","تنفيذ","تطوير","تقييم","اعتماد"];
 
 function analyze(){
   const container=document.getElementById("results");
@@ -119,15 +128,29 @@ function analyze(){
 
   lines.forEach((text,i)=>{
     const verbsFound=VERBS.filter(v=>text.includes(v));
+
+    // المجال = النص بدون الأفعال فقط
+    let domain=text;
+    verbsFound.forEach(v=>{
+      domain=domain.replace(new RegExp(v,"g"),"").trim();
+    });
+
     const card=document.createElement("div");
     card.className="task-card";
 
     let table=`
     <table>
-      <tr><th>الأفعال</th><th>النص</th></tr>
+      <tr>
+        <th>الفعل</th>
+        <th>المجال</th>
+        <th>الأداة</th>
+        <th>المخرج</th>
+      </tr>
       <tr>
         <td>${verbsFound.join("، ")||"-"}</td>
-        <td>${text}</td>
+        <td>${domain||"-"}</td>
+        <td>-</td>
+        <td>-</td>
       </tr>
     </table>`;
 
@@ -139,20 +162,23 @@ function analyze(){
       ⚠ النص يحتوي على ${verbsFound.length} أفعال تنظيمية → يُقترح فصله إلى ${verbsFound.length} مهام مستقلة
       </div>`;
 
-      suggestHtml="<h4>مقترحات فصل وصياغة ذكية:</h4>";
+      suggestHtml="<h4>مقترحات فصل وصياغة كاملة:</h4>";
 
       verbsFound.forEach(v=>{
+        const s=`${v} ${domain}`;
         suggestHtml+=`
         <div class="suggest">
-        ${v} منظومة العمرة ضمن نطاق اختصاص الجهة بما يحقق هدفًا محددًا مرتبطًا بالفعل (${v})
+          ${s}
+          <button class="btn-secondary" onclick="approve('${s.replace(/'/g,"")}')">اعتماد</button>
         </div>`;
       });
     } else {
-      evalHtml=`<div class="ok">✓ مهمة مستقرة من حيث عدد الأفعال</div>`;
+      const s=`${verbsFound[0]||"تنظيم"} ${domain}`;
       suggestHtml=`
       <h4>مقترح صياغة منضبطة:</h4>
       <div class="suggest">
-      ${verbsFound[0]||"تنظيم"} ${text.replace(verbsFound[0]||"", "").trim()}
+        ${s}
+        <button class="btn-secondary" onclick="approve('${s.replace(/'/g,"")}')">اعتماد</button>
       </div>`;
     }
 
@@ -164,6 +190,14 @@ function analyze(){
     `;
     container.appendChild(card);
   });
+}
+
+function approve(text){
+  const list=document.getElementById("approvedList");
+  const div=document.createElement("div");
+  div.className="approved";
+  div.textContent=text;
+  list.appendChild(div);
 }
 
 function clearAll(){
