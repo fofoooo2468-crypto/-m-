@@ -76,7 +76,7 @@ th,td{
 }
 th{background:#f1e8dc;text-align:center;}
 
-.warn{color:#b00000;font-size:13px;}
+.warn{color:#b00000;font-size:13px;margin-top:8px;}
 .suggest{
   background:#f9f5ef;
   padding:10px;
@@ -90,94 +90,250 @@ th{background:#f1e8dc;text-align:center;}
   border-radius:8px;
   margin-top:6px;
 }
+.section-title{
+  margin-top:24px;
+  margin-bottom:8px;
+}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<div class="panel">
-<h3>أدخل مهمة أو أكثر (كل مهمة بسطر):</h3>
-<textarea id="input"></textarea>
-<div class="actions">
-  <button class="btn-primary" onclick="analyze()">تحليل</button>
-  <button class="btn-ghost" onclick="clearAll()">مسح</button>
-</div>
-</div>
+  <div class="panel">
+    <h3>أدخل مهمة أو أكثر (كل مهمة في سطر مستقل):</h3>
+    <textarea id="input" placeholder="مثال: تنظيم وتوجيه وتحفيز منظومة العمرة التي تمكن شركات العمرة من ابتكار برامج وباقات نوعية..."></textarea>
+    <div class="actions">
+      <button class="btn-primary" onclick="analyze()">تحليل</button>
+      <button class="btn-ghost" onclick="clearAll()">مسح</button>
+    </div>
+  </div>
 
-<div id="results"></div>
+  <h3 class="section-title">نتائج التحليل</h3>
+  <div id="results"></div>
 
-<div class="task-card">
-<h3>الصياغات المعتمدة</h3>
-<div id="approvedList"></div>
-</div>
+  <div class="task-card">
+    <h3>الصياغات المعتمدة</h3>
+    <div id="approvedList"></div>
+  </div>
 
 </div>
 
 <script>
-const VERBS=["تنظيم","توجيه","تحفيز","إشراف","متابعة","رقابة","تنفيذ","تطوير","تقييم"];
+// =======================
+// 1) قاموس الأفعال التنظيمية (Rule-based)
+// =======================
+const VERBS = [
+  "تنظيم",
+  "توجيه",
+  "تحفيز",
+  "إشراف",
+  "متابعة",
+  "رقابة",
+  "تنفيذ",
+  "تطوير",
+  "تقييم",
+  "تقويم",
+  "قياس",
+  "اعتماد",
+  "إقرار",
+  "تنسيق"
+];
 
-function analyze(){
-  const container=document.getElementById("results");
-  container.innerHTML="";
+// يمكن لاحقاً إضافة قاموس للأدوات/المخرجات إن أردت، لكن هنا نلتزم بعدم الافتراض.
 
-  const lines=document.getElementById("input").value
-    .split("\n").map(l=>l.trim()).filter(Boolean);
+// =======================
+// 2) Parsing Layer
+// =======================
 
-  lines.forEach((text,i)=>{
-    const verbsFound=VERBS.filter(v=>text.includes(v));
+// استخراج الأفعال التنظيمية نصاً فقط بدون استنتاج
+function extractVerbs(text){
+  const found = [];
+  VERBS.forEach(v => {
+    if (text.includes(v)) {
+      found.push(v);
+    }
+  });
+  // إزالة التكرار إن وجد
+  return [...new Set(found)];
+}
 
-    let domain=text;
-    verbsFound.forEach(v=>{
-      domain=domain.replace(new RegExp(v,"g"),"").trim();
-    });
+// المجال = النص كما هو بالكامل (لا نحذف الأفعال ولا نعيد تركيب الجملة)
+function extractDomain(text){
+  return text.trim();
+}
 
-    const card=document.createElement("div");
-    card.className="task-card";
+// No Assumptions Rule للأداة والمخرج
+function extractTool(text){
+  // إذا لم يذكر شيء صريح في النص يدل على أداة، نضع "-"
+  return "-";
+}
 
-    card.innerHTML=`
-    <h4>المهمة ${i+1}</h4>
-    <table>
-      <tr>
-        <th>الفعل</th>
-        <th>المجال</th>
-        <th>الأداة</th>
-        <th>المخرج</th>
-      </tr>
-      <tr>
-        <td>${verbsFound.join("، ")||"-"}</td>
-        <td>${domain||"-"}</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>
-    </table>
-    <div class="warn">⚠ الصياغة الحالية غير مكتملة العناصر، ويقترح ما يلي:</div>
-    <h4>مقترحات صياغة تنظيمية مكتملة:</h4>
-    ${verbsFound.map(v=>{
-      const s = `${v} منظومة العمرة بما يمكن شركات العمرة من ابتكار برامج وباقات نوعية تتوافق مع احتياجات الزوار وتوجهات الأسواق المستهدفة، وذلك من خلال أطر تنظيمية ومعايير معتمدة، بما ينتج عنه تعزيز التنافسية وتحقيق مستهدفات المملكة في إثراء تجربة ضيوف الرحمن.`;
-      return `
-        <div class="suggest">
-          ${s}
-          <button class="btn-secondary" onclick="approve('${s.replace(/'/g,"")}')">اعتماد</button>
-        </div>`;
-    }).join("")}
-    `;
+function extractOutput(text){
+  // إذا لم يذكر شيء صريح في النص يدل على مخرج، نضع "-"
+  return "-";
+}
 
-    container.appendChild(card);
+// =======================
+// 3) Validation Layer
+// =======================
+
+function validateTask(verbs, outputsArray){
+  const hasMultiVerbs   = verbs && verbs.length > 1;
+  const hasMultiOutputs = outputsArray && outputsArray.length > 1;
+
+  if (hasMultiVerbs || hasMultiOutputs){
+    return {
+      classification: "مركبة",
+      reason: hasMultiVerbs
+        ? "تعدد الأفعال التنظيمية"
+        : "تعدد المخرجات"
+    };
+  }
+
+  return {
+    classification: "مفردة",
+    reason: "لا يوجد تعدد في الأفعال أو المخرجات"
+  };
+}
+
+// =======================
+// 4) Suggestion Layer
+// =======================
+
+// عند كون المهمة مركبة: نقترح فصلها إلى مهام مستقلة
+// كل مقترح: (فعل + المجال الكامل + الأداة + المخرج)
+function buildSuggestions(verbs, domain, tool, output, classification){
+  if (classification !== "مركبة") return [];
+
+  // حالياً نعتبر التركيب مركب بسبب تعدد الأفعال فقط (لا نستخرج مخرجات متعددة بعد)
+  if (!verbs || verbs.length <= 1) return [];
+
+  return verbs.map(v => {
+    // لا نؤلف نص جديد، فقط نركّب العناصر الأربعة بشكل شفاف
+    // الفعل + المجال كما هو
+    let base = v + " " + domain;
+
+    // نضيف الأداة والمخرج كبيانات وصفية، دون افتراض نصي لغوي إضافي
+    const meta = `الأداة: ${tool || "-"} | المخرج: ${output || "-"}`;
+
+    return {
+      verb: v,
+      text: base,
+      meta: meta
+    };
   });
 }
 
+// =======================
+// 5) Approval Layer + ربط الواجهة
+// =======================
+
+function analyze(){
+  const resultsContainer = document.getElementById("results");
+  resultsContainer.innerHTML = "";
+
+  const raw = document.getElementById("input").value || "";
+  const lines = raw
+    .split("\n")
+    .map(l => l.trim())
+    .filter(Boolean); // إزالة الأسطر الفارغة
+
+  if (!lines.length){
+    alert("الرجاء إدخال مهمة واحدة على الأقل.");
+    return;
+  }
+
+  lines.forEach((text, index) => {
+    // --- Parsing ---
+    const verbs   = extractVerbs(text);
+    const domain  = extractDomain(text);
+    const tool    = extractTool(text);
+    const output  = extractOutput(text);
+
+    // ملاحظة: لم نطبّق بعد استخراج مخرجات متعددة، لذا نمرر مصفوفة فارغة
+    const validation = validateTask(verbs, []);
+
+    const card = document.createElement("div");
+    card.className = "task-card";
+
+    const verbCell   = verbs.length ? verbs.join("، ") : "-";
+    const domainCell = domain || "-";
+    const toolCell   = tool || "-";
+    const outCell    = output || "-";
+
+    const suggestions = buildSuggestions(
+      verbs,
+      domain,
+      tool,
+      output,
+      validation.classification
+    );
+
+    card.innerHTML = `
+      <h4>المهمة ${index + 1}</h4>
+      <table>
+        <tr>
+          <th>الفعل</th>
+          <th>المجال</th>
+          <th>الأداة</th>
+          <th>المخرج</th>
+        </tr>
+        <tr>
+          <td>${verbCell}</td>
+          <td>${domainCell}</td>
+          <td>${toolCell}</td>
+          <td>${outCell}</td>
+        </tr>
+      </table>
+
+      <div class="warn">
+        تصنيف المهمة: ${validation.classification} – السبب: ${validation.reason}
+      </div>
+
+      ${
+        suggestions.length
+          ? `
+            <h4>مقترحات فصل إلى مهام مستقلة:</h4>
+            ${suggestions.map(s => `
+              <div class="suggest">
+                <div>${s.text}</div>
+                <div style="font-size:12px;color:#555;margin-top:4px;">${s.meta}</div>
+                <button class="btn-secondary" onclick="approve('${escapeForOnClick(s.text)} | ${escapeForOnClick(s.meta)}')">
+                  اعتماد الصياغة
+                </button>
+              </div>
+            `).join("")}
+          `
+          : `
+            <div class="suggest">
+              لا توجد حاجة لفصل المهمة، ليست مركبة.
+            </div>
+          `
+      }
+    `;
+
+    resultsContainer.appendChild(card);
+  });
+}
+
+// تهريب النص لسلامة الاستخدام داخل onClick
+function escapeForOnClick(str){
+  return String(str).replace(/'/g, "\\'");
+}
+
 function approve(text){
-  const list=document.getElementById("approvedList");
-  const div=document.createElement("div");
-  div.className="approved";
-  div.textContent=text;
+  const list = document.getElementById("approvedList");
+  const div  = document.createElement("div");
+  div.className = "approved";
+  div.textContent = text;
   list.appendChild(div);
 }
 
 function clearAll(){
-  document.getElementById("input").value="";
-  document.getElementById("results").innerHTML="";
+  document.getElementById("input").value = "";
+  document.getElementById("results").innerHTML = "";
+  document.getElementById("approvedList").innerHTML = "";
 }
 </script>
 </body>
