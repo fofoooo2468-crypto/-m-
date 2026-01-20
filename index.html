@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>أداة تحليل وصياغة المهام التنظيمية</title>
+<title>محلل وصياغة المهام التنظيمية</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -77,8 +77,6 @@ th,td{
 th{background:#f1e8dc;text-align:center;}
 
 .warn{color:#b00000;font-size:13px;}
-.ok{color:#0a6b34;font-size:13px;}
-
 .suggest{
   background:#f9f5ef;
   padding:10px;
@@ -117,7 +115,7 @@ th{background:#f1e8dc;text-align:center;}
 </div>
 
 <script>
-const VERBS = ["تنظيم","توجيه","تحفيز","إشراف","متابعة","رقابة","تنفيذ","تطوير","تقييم","اعتماد"];
+const VERBS=["تنظيم","توجيه","تحفيز","إشراف","متابعة","رقابة","تنفيذ","تطوير","تقييم"];
 
 function analyze(){
   const container=document.getElementById("results");
@@ -129,7 +127,6 @@ function analyze(){
   lines.forEach((text,i)=>{
     const verbsFound=VERBS.filter(v=>text.includes(v));
 
-    // المجال = النص بدون الأفعال فقط
     let domain=text;
     verbsFound.forEach(v=>{
       domain=domain.replace(new RegExp(v,"g"),"").trim();
@@ -138,7 +135,8 @@ function analyze(){
     const card=document.createElement("div");
     card.className="task-card";
 
-    let table=`
+    card.innerHTML=`
+    <h4>المهمة ${i+1}</h4>
     <table>
       <tr>
         <th>الفعل</th>
@@ -152,42 +150,19 @@ function analyze(){
         <td>-</td>
         <td>-</td>
       </tr>
-    </table>`;
-
-    let evalHtml="";
-    let suggestHtml="";
-
-    if(verbsFound.length>1){
-      evalHtml=`<div class="warn">
-      ⚠ النص يحتوي على ${verbsFound.length} أفعال تنظيمية → يُقترح فصله إلى ${verbsFound.length} مهام مستقلة
-      </div>`;
-
-      suggestHtml="<h4>مقترحات فصل وصياغة كاملة:</h4>";
-
-      verbsFound.forEach(v=>{
-        const s=`${v} ${domain}`;
-        suggestHtml+=`
+    </table>
+    <div class="warn">⚠ الصياغة الحالية غير مكتملة العناصر، ويقترح ما يلي:</div>
+    <h4>مقترحات صياغة تنظيمية مكتملة:</h4>
+    ${verbsFound.map(v=>{
+      const s = `${v} منظومة العمرة بما يمكن شركات العمرة من ابتكار برامج وباقات نوعية تتوافق مع احتياجات الزوار وتوجهات الأسواق المستهدفة، وذلك من خلال أطر تنظيمية ومعايير معتمدة، بما ينتج عنه تعزيز التنافسية وتحقيق مستهدفات المملكة في إثراء تجربة ضيوف الرحمن.`;
+      return `
         <div class="suggest">
           ${s}
           <button class="btn-secondary" onclick="approve('${s.replace(/'/g,"")}')">اعتماد</button>
         </div>`;
-      });
-    } else {
-      const s=`${verbsFound[0]||"تنظيم"} ${domain}`;
-      suggestHtml=`
-      <h4>مقترح صياغة منضبطة:</h4>
-      <div class="suggest">
-        ${s}
-        <button class="btn-secondary" onclick="approve('${s.replace(/'/g,"")}')">اعتماد</button>
-      </div>`;
-    }
-
-    card.innerHTML=`
-    <h4>المهمة ${i+1}</h4>
-    ${table}
-    ${evalHtml}
-    ${suggestHtml}
+    }).join("")}
     `;
+
     container.appendChild(card);
   });
 }
