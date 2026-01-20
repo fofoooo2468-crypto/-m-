@@ -2,196 +2,174 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>أداة تحليل وتقييم المهام</title>
+<title>أداة تحليل وصياغة المهام التنظيمية</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-:root {
-  --bg: #f5ede3;
-  --card: #ffffff;
-  --border: #e0d6c8;
-  --gold: #d7a562;
-  --navy: #174766;
-  --ink: #00080b;
-  --radius: 10px;
-  --shadow: 0 2px 6px rgba(0,0,0,.08);
+:root{
+  --bg:#f5ede3;
+  --card:#fff;
+  --border:#e0d6c8;
+  --gold:#d7a562;
+  --navy:#174766;
+  --ink:#00080b;
+  --radius:10px;
+  --shadow:0 2px 6px rgba(0,0,0,.08);
 }
 
-body {
-  font-family: "Cairo", sans-serif;
-  background: var(--bg);
-  margin: 0;
-  padding: 24px;
-  color: var(--ink);
+body{
+  font-family:"Cairo",sans-serif;
+  background:var(--bg);
+  margin:0;
+  padding:24px;
+  color:var(--ink);
 }
 
-.container {
-  max-width: 1000px;
-  margin: auto;
+.container{max-width:1000px;margin:auto;}
+
+.panel{
+  background:var(--card);
+  padding:16px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
 }
 
-.panel {
-  background: var(--card);
-  padding: 16px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+textarea{
+  width:100%;
+  height:120px;
+  padding:12px;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  font-family:inherit;
 }
 
-textarea {
-  width: 100%;
-  height: 120px;
-  padding: 12px;
-  font-family: inherit;
-  font-size: 14px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+.actions{margin-top:10px;display:flex;gap:8px;}
+button{
+  padding:8px 14px;
+  border-radius:var(--radius);
+  font-family:inherit;
+  cursor:pointer;
+  border:none;
+}
+.btn-primary{background:var(--gold);}
+.btn-secondary{background:var(--navy);color:#fff;}
+.btn-ghost{background:transparent;border:1px solid var(--border);}
+
+.task-card{
+  background:var(--card);
+  padding:16px;
+  margin-top:16px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
 }
 
-.actions {
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
 }
-
-button {
-  padding: 8px 14px;
-  font-family: inherit;
-  font-size: 13px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  border: none;
+th,td{
+  border:1px solid var(--border);
+  padding:8px;
+  vertical-align:top;
 }
+th{background:#f1e8dc;text-align:center;}
 
-.btn-primary { background: var(--gold); }
-.btn-secondary { background: var(--navy); color:#fff; }
-.btn-ghost { background: transparent; border:1px solid var(--border); }
+.warn{color:#b00000;font-size:13px;}
+.ok{color:#0a6b34;font-size:13px;}
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 16px;
-  background: var(--card);
-  box-shadow: var(--shadow);
-  border-radius: var(--radius);
+.suggest{
+  background:#f9f5ef;
+  padding:10px;
+  border-radius:8px;
+  margin-top:8px;
 }
-
-th, td {
-  border: 1px solid var(--border);
-  padding: 8px;
-  vertical-align: top;
-}
-
-th {
-  background: #f1e8dc;
-  text-align: center;
-}
-
-.ok { color:#0a6b34; font-size:12px; }
-.warn { color:#b00000; font-size:12px; }
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
-  <div class="panel">
-    <h3>أدخل مهمة أو أكثر (كل مهمة بسطر):</h3>
-    <textarea id="input"></textarea>
+<div class="panel">
+<h3>أدخل مهمة أو أكثر (كل مهمة بسطر):</h3>
+<textarea id="input"></textarea>
+<div class="actions">
+  <button class="btn-primary" onclick="analyze()">تحليل</button>
+  <button class="btn-ghost" onclick="clearAll()">مسح</button>
+</div>
+</div>
 
-    <div class="actions">
-      <button class="btn-primary" onclick="analyze()">تحليل</button>
-      <button class="btn-ghost" onclick="clearAll()">مسح</button>
-      <button class="btn-secondary" onclick="copyTable()">نسخ</button>
-    </div>
-  </div>
-
-  <table id="resultTable">
-    <thead>
-      <tr>
-        <th>الفعل</th>
-        <th>المجال</th>
-        <th>الأداة</th>
-        <th>المخرج</th>
-        <th>التقييم</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<div id="results"></div>
 
 </div>
 
 <script>
-const verbs = [
-  "تنظيم","إشراف","رقابة","متابعة","تنفيذ","تطوير",
-  "تقويم","تقييم","اعتماد","إدارة","مراجعة","إعداد","تحليل"
+const VERBS = [
+  "تنظيم","توجيه","تحفيز","إشراف","متابعة","رقابة",
+  "تنفيذ","تطوير","تقييم","تقويم","اعتماد","إدارة","مراجعة"
 ];
 
 function analyze(){
-  const tbody = document.querySelector("#resultTable tbody");
-  tbody.innerHTML = "";
+  const container=document.getElementById("results");
+  container.innerHTML="";
 
-  const lines = document.getElementById("input").value
+  const lines=document.getElementById("input").value
     .split("\n").map(l=>l.trim()).filter(Boolean);
 
-  lines.forEach(line=>{
-    let فعل="-", مجال="-", أداة="-", مخرج="-";
-    let checklist = [];
+  lines.forEach((text,i)=>{
+    const verbsFound=VERBS.filter(v=>text.includes(v));
+    const card=document.createElement("div");
+    card.className="task-card";
 
-    const foundVerbs = verbs.filter(v=>line.includes(v));
+    let table=`
+    <table>
+      <tr><th>الأفعال</th><th>النص</th></tr>
+      <tr>
+        <td>${verbsFound.join("، ")||"-"}</td>
+        <td>${text}</td>
+      </tr>
+    </table>`;
 
-    if(foundVerbs.length){
-      فعل = foundVerbs[0];
-      مجال = line.replace(فعل,"").trim() || "-";
-      checklist.push(`<div class="ok">✓ فعل محدد</div>`);
+    let evalHtml="";
+    let suggestHtml="";
+
+    if(verbsFound.length>1){
+      evalHtml=`<div class="warn">
+      ⚠ النص يحتوي على ${verbsFound.length} أفعال تنظيمية → يُقترح فصله إلى ${verbsFound.length} مهام مستقلة
+      </div>`;
+
+      suggestHtml="<h4>مقترحات فصل وصياغة ذكية:</h4>";
+
+      verbsFound.forEach(v=>{
+        suggestHtml+=`
+        <div class="suggest">
+        ${v} منظومة العمرة ضمن نطاق اختصاص الجهة بما يحقق هدفًا محددًا مرتبطًا بالفعل (${v})
+        </div>`;
+      });
     } else {
-      checklist.push(`<div class="warn">⚠ لا يوجد فعل صريح</div>`);
+      evalHtml=`<div class="ok">✓ مهمة مستقرة من حيث عدد الأفعال</div>`;
+      suggestHtml=`
+      <h4>مقترح صياغة منضبطة:</h4>
+      <div class="suggest">
+      ${verbsFound[0]||"تنظيم"} ${text.replace(verbsFound[0]||"", "").trim()}
+      </div>`;
     }
 
-    if(foundVerbs.length>1){
-      checklist.push(`<div class="warn">⚠ يُقترح تقسيم المهمة (أكثر من فعل)</div>`);
-    }
-
-    if(line.includes("من خلال")||line.includes("وفق")){
-      أداة = line.split(/من خلال|وفق/)[1]?.trim()||"-";
-      checklist.push(`<div class="ok">✓ أداة مذكورة</div>`);
-    } else {
-      checklist.push(`<div class="warn">⚠ لا توجد أداة</div>`);
-    }
-
-    if(line.includes("لتحقيق")||line.includes("بما")){
-      مخرج = line;
-      checklist.push(`<div class="ok">✓ مخرج موجود</div>`);
-    } else {
-      checklist.push(`<div class="warn">⚠ لا يوجد مخرج</div>`);
-    }
-
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td>${فعل}</td>
-      <td>${مجال}</td>
-      <td>${أداة}</td>
-      <td>${مخرج}</td>
-      <td>${checklist.join("")}</td>
+    card.innerHTML=`
+    <h4>المهمة ${i+1}</h4>
+    ${table}
+    ${evalHtml}
+    ${suggestHtml}
     `;
-    tbody.appendChild(tr);
+    container.appendChild(card);
   });
 }
 
 function clearAll(){
   document.getElementById("input").value="";
-  document.querySelector("#resultTable tbody").innerHTML="";
-}
-
-function copyTable(){
-  let text="";
-  document.querySelectorAll("#resultTable tbody tr").forEach(r=>{
-    text+=Array.from(r.children).map(c=>c.innerText.replace(/\n/g," | ")).join("\t")+"\n";
-  });
-  navigator.clipboard.writeText(text);
+  document.getElementById("results").innerHTML="";
 }
 </script>
-
 </body>
 </html>
